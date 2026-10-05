@@ -1,0 +1,24 @@
+{
+  "name": "Agenda Nails",
+  "short_name": "Agenda",
+  "description": "Agenda gestionale per nail artist ed estetiste: appuntamenti, clienti, storico, magazzino, fornitori e appunti. I dati restano sul dispositivo.",
+  "lang": "it-IT",
+  "dir": "ltr",
+  "start_url": "./index.html#/oggi",
+  "scope": "./",
+  "id": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#faf7f7",
+  "theme_color": "#b4646e",
+  "categories": ["business", "productivity"],
+  "icons": [
+    { "src": "icone/icona-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icone/icona-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icone/icona-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Agenda", "url": "./index.html#/agenda", "icons": [{ "src": "icone/icona-192.png", "sizes": "192x192" }] },
+    { "name": "Clienti", "url": "./index.html#/clienti", "icons": [{ "src": "icone/icona-192.png", "sizes": "192x192" }] }
+  ]
+}
