@@ -3401,7 +3401,7 @@ async function vistaMagazzino(el) {
     $('#mg-lista', el).innerHTML = lista.map((p) => {
       const g = gia.get(p.id) || 0;
       return `<li><div class="riga" style="cursor:default;flex-wrap:wrap">
-        <button type="button" class="principale" data-apri="${esc(p.id)}" style="background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;min-height:44px">
+        <button type="button" class="principale" data-apri="${esc(p.id)}" style="background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;min-height:44px;flex:1 1 220px">
           <span class="titolo">${esc(nomeProdotto(p))}</span> ${badgeProdotto(p, g)}
           <div class="sotto">${esc([descrProdotto(p), p.categoria].filter(Boolean).join(' · '))}${Number(p.scortaMinima) ? ` · scorta min. ${esc(fmtQta(p.scortaMinima, p.unita))}` : ''}</div>
         </button>
