@@ -449,7 +449,7 @@ class _Tessera extends StatelessWidget {
                   final basso = v.maxHeight < 40;
                   return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(
-                      anteprimaOrario ?? F.intervallo(i, f),
+                      basso && anteprimaOrario == null ? '${D.hhmm(i)} · ${icone.isEmpty ? '' : '$icone '}$nome' : (anteprimaOrario ?? F.intervallo(i, f)),
                       maxLines: 1,
                       overflow: TextOverflow.clip,
                       style: TextStyle(color: testo.withValues(alpha: 0.9), fontSize: 11, fontWeight: FontWeight.w600, fontFeatures: const [FontFeature.tabularFigures()]),
