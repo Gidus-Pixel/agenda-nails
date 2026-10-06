@@ -11,7 +11,7 @@ import '../tema.dart';
 
 /// Nuova cliente o modifica: dati, preferenze, consensi, avvertenze (solo con consenso ai dati sanitari).
 Future<String?> apriModuloCliente(BuildContext context, {Doc? cliente}) {
-  return Navigator.of(context).push(MaterialPageRoute<String?>(fullscreenDialog: true, builder: (_) => ModuloCliente(cliente: cliente)));
+  return Navigator.of(context).push<String?>(MaterialPageRoute<String?>(fullscreenDialog: true, builder: (_) => ModuloCliente(cliente: cliente)));
 }
 
 class ModuloCliente extends StatefulWidget {
@@ -86,9 +86,8 @@ class _ModuloClienteState extends State<ModuloCliente> {
     _c['archiviato'] = _c['archiviato'] ?? false;
     final rec = await d.salva('clienti', _c);
     if (!mounted) return;
-    final r = radice(context);
     Navigator.pop(context, comeStr(rec['id']));
-    avviso(r, widget.cliente == null ? 'Cliente salvata' : 'Modifiche salvate');
+    avvisa(widget.cliente == null ? 'Cliente salvata' : 'Modifiche salvate');
   }
 
   Widget _scelte(String titolo, List<String> opzioni, String chiave) {

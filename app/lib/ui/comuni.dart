@@ -8,10 +8,24 @@ import 'tema.dart';
 
 bool eIOS(BuildContext c) => Theme.of(c).platform == TargetPlatform.iOS || Theme.of(c).platform == TargetPlatform.macOS;
 
+/// Messaggi in basso di tutta l'app (validi anche dopo aver chiuso una pagina o un foglio).
+final messaggero = GlobalKey<ScaffoldMessengerState>();
+
+/// Messaggio in basso senza contesto: da usare dopo aver chiuso la pagina corrente.
+void avvisa(String testo, {Future<void> Function()? annulla, bool errore = false}) {
+  final m = messaggero.currentState;
+  if (m == null) return;
+  _mostra(m, m.context, testo, annulla: annulla, errore: errore);
+}
+
 /// Messaggio in basso, con "Annulla" facoltativo.
 void avviso(BuildContext context, String testo, {Future<void> Function()? annulla, String? azione, VoidCallback? suAzione, bool errore = false}) {
   final m = ScaffoldMessenger.maybeOf(context);
   if (m == null) return;
+  _mostra(m, context, testo, annulla: annulla, azione: azione, suAzione: suAzione, errore: errore);
+}
+
+void _mostra(ScaffoldMessengerState m, BuildContext context, String testo, {Future<void> Function()? annulla, String? azione, VoidCallback? suAzione, bool errore = false}) {
   m.hideCurrentSnackBar();
   m.showSnackBar(SnackBar(
     content: Text(testo),

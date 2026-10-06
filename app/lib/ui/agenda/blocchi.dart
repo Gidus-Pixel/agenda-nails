@@ -176,18 +176,16 @@ class _ModuloBloccoState extends State<_ModuloBlocco> {
     }
     await d.salva('blocchi', rec);
     if (!mounted) return;
-    final r = radice(context);
     Navigator.pop(context);
-    avviso(r, widget.blocco == null ? 'Salvato: ${descriviBlocco(rec)}' : 'Modifiche salvate');
+    avvisa(widget.blocco == null ? 'Salvato: ${descriviBlocco(rec)}' : 'Modifiche salvate');
   }
 
   Future<void> _elimina() async {
     final b = widget.blocco!;
     final d = context.dati;
-    final r = radice(context);
     Navigator.pop(context);
     await d.archivia('blocchi', comeStr(b['id']));
-    avviso(r, 'Eliminato', annulla: () async => d.ripristina('blocchi', comeStr(b['id'])));
+    avvisa('Eliminato', annulla: () async => d.ripristina('blocchi', comeStr(b['id'])));
   }
 
   @override

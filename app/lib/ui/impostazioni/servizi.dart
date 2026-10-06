@@ -116,18 +116,16 @@ class _ModuloServizioState extends State<_ModuloServizio> {
     rec['colore'] = esadecimale(_colore);
     await d.salva('servizi', rec);
     if (!mounted) return;
-    final r = radice(context);
     Navigator.pop(context);
-    avviso(r, 'Servizio salvato');
+    avvisa('Servizio salvato');
   }
 
   Future<void> _archivia() async {
     final d = context.dati;
     final id = comeStr(widget.servizio!['id']);
-    final r = radice(context);
     Navigator.pop(context);
     await d.archivia('servizi', id);
-    avviso(r, 'Servizio tolto dal listino (gli appuntamenti passati non cambiano)', annulla: () async => d.ripristina('servizi', id));
+    avvisa('Servizio tolto dal listino (gli appuntamenti passati non cambiano)', annulla: () async => d.ripristina('servizi', id));
   }
 
   @override

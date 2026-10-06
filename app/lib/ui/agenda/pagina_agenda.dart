@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../core/config.dart';
 import '../../core/date.dart';
 import '../../core/util.dart';
 import '../../dominio/agenda.dart';

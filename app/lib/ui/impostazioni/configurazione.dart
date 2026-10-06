@@ -80,9 +80,8 @@ class _PaginaAttivitaState extends State<PaginaAttivita> {
       };
     });
     if (mounted) {
-      final r = radice(context);
       Navigator.pop(context);
-      avviso(r, 'Dati dell\'attività salvati');
+      avvisa('Dati dell\'attività salvati');
     }
   }
 
@@ -325,9 +324,8 @@ class _PaginaMessaggiState extends State<PaginaMessaggi> {
   Future<void> _salva() async {
     await modificaConfig(context, (c) => c['messaggi'] = {...comeDoc(c['messaggi']), 'promemoria': _prom.text.trim(), 'richiamo': _rich.text.trim()});
     if (mounted) {
-      final r = radice(context);
       Navigator.pop(context);
-      avviso(r, 'Messaggi salvati');
+      avvisa('Messaggi salvati');
     }
   }
 

@@ -171,7 +171,6 @@ class _ModuloAppuntamentoState extends State<ModuloAppuntamento> {
       };
       if (!mounted) return;
       final nav = Navigator.of(context);
-      final r = radice(context);
       if (_modifica) {
         final a = widget.app!;
         final prima = clonaDoc(a);
@@ -181,7 +180,7 @@ class _ModuloAppuntamentoState extends State<ModuloAppuntamento> {
         a['stato'] = _stato;
         await d.salva('appuntamenti', a);
         nav.pop();
-        avviso(r, 'Appuntamento aggiornato', annulla: () async {
+        avvisa('Appuntamento aggiornato', annulla: () async {
           a
             ..clear()
             ..addAll(prima);
@@ -195,7 +194,7 @@ class _ModuloAppuntamentoState extends State<ModuloAppuntamento> {
         await d.salvaMolti('appuntamenti', creati);
         nav.pop();
         vibra(true);
-        avviso(r, occ.length > 1 ? '${occ.length} appuntamenti creati' : 'Appuntamento fissato: ${giornoRelativo(_inizio).toLowerCase()} alle ${D.hhmm(_inizio)}', annulla: () async {
+        avvisa(occ.length > 1 ? '${occ.length} appuntamenti creati' : 'Appuntamento fissato: ${giornoRelativo(_inizio).toLowerCase()} alle ${D.hhmm(_inizio)}', annulla: () async {
           await d.inBlocco(() async {
             await d.eliminaMolti('appuntamenti', [for (final c in creati) comeStr(c['id'])]);
             if (nuovaCli != null) await d.elimina('clienti', comeStr(nuovaCli['id']));

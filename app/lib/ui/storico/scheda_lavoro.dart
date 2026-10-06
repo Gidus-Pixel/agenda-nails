@@ -157,13 +157,12 @@ class _SchedaLavoroState extends State<SchedaLavoro> {
       }
     });
     if (!mounted) return;
-    final r = radice(context);
     Navigator.pop(context);
     vibra(true);
     if (_modifica) {
-      avviso(r, 'Scheda lavoro aggiornata');
+      avvisa('Scheda lavoro aggiornata');
     } else {
-      avviso(r, app != null ? 'Appuntamento completato · scheda salvata${cli != null ? ' per ${comeStr(cli['nome'])}' : ''}' : 'Scheda lavoro salvata', annulla: () async {
+      avvisa(app != null ? 'Appuntamento completato · scheda salvata${cli != null ? ' per ${comeStr(cli['nome'])}' : ''}' : 'Scheda lavoro salvata', annulla: () async {
         await d.inBlocco(() async {
           await d.eliminaMolti('foto', [for (final f in nuove) comeStr(f['id'])]);
           await d.elimina('schede_lavoro', comeStr(rec['id']));
@@ -184,9 +183,8 @@ class _SchedaLavoroState extends State<SchedaLavoro> {
     final id = comeStr(widget.scheda!['id']);
     await d.archivia('schede_lavoro', id);
     if (!mounted) return;
-    final r = radice(context);
     Navigator.pop(context);
-    avviso(r, 'Scheda lavoro eliminata', annulla: () async => d.ripristina('schede_lavoro', id));
+    avvisa('Scheda lavoro eliminata', annulla: () async => d.ripristina('schede_lavoro', id));
   }
 
   Widget _scelte(String titolo, List<String> opzioni, String valore, ValueChanged<String> fn) {

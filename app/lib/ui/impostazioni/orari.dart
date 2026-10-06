@@ -48,9 +48,8 @@ class _PaginaOrariState extends State<PaginaOrari> {
     }
     await modificaConfig(context, (c) => c['orari'] = {for (final g in D.giorniKey) g: _o[g]});
     if (mounted) {
-      final r = radice(context);
       Navigator.pop(context);
-      avviso(r, 'Orari salvati');
+      avvisa('Orari salvati');
     }
   }
 

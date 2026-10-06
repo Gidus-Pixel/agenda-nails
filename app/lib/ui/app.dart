@@ -7,6 +7,7 @@ import '../dati/dati.dart';
 import '../dominio/cloud.dart';
 import 'agenda/pagina_agenda.dart';
 import 'clienti/pagina_clienti.dart';
+import 'comuni.dart';
 import 'impostazioni/pagina_altro.dart';
 import 'oggi.dart';
 import 'tema.dart';
@@ -65,6 +66,7 @@ class AppAgenda extends StatelessWidget {
           return MaterialApp(
             title: dati.nomeAttivita.isEmpty ? 'Agenda' : dati.nomeAttivita,
             debugShowCheckedModeBanner: false,
+            scaffoldMessengerKey: messaggero,
             theme: Tema.crea(primario: primario, luminosita: Brightness.light),
             darkTheme: Tema.crea(primario: primario, luminosita: Brightness.dark),
             themeMode: switch (tema) { 'chiaro' => ThemeMode.light, 'scuro' => ThemeMode.dark, _ => ThemeMode.system },

@@ -241,9 +241,8 @@ class SchedaCliente extends StatelessWidget {
       case 'archivia':
         await d.archivia('clienti', id);
         if (context.mounted) {
-          final r = radice(context);
           if (!incorporata) Navigator.pop(context);
-          avviso(r, 'Cliente archiviata: non compare più nelle ricerche, lo storico resta.', annulla: () async => d.ripristina('clienti', id));
+          avvisa('Cliente archiviata: non compare più nelle ricerche, lo storico resta.', annulla: () async => d.ripristina('clienti', id));
         }
       case 'ripristina':
         await d.ripristina('clienti', id);
@@ -252,10 +251,9 @@ class SchedaCliente extends StatelessWidget {
         if (!ok1 || !context.mounted) return;
         final ok2 = await conferma(context, titolo: 'Sei sicuro?', messaggio: 'Questa operazione non si può annullare.', ok: 'Cancella definitivamente', pericolo: true);
         if (!ok2 || !context.mounted) return;
-        final r = radice(context);
         if (!incorporata) Navigator.pop(context);
         await eliminaClienteConAnonimizzazione(d, id);
-        avviso(r, 'Cliente cancellata. Lo storico resta in forma anonima.');
+        avvisa('Cliente cancellata. Lo storico resta in forma anonima.');
     }
   }
 }
