@@ -65,3 +65,29 @@ int? coloreDaHex(dynamic hex) {
   final n = int.tryParse(s, radix: 16);
   return n == null ? null : 0xFF000000 | n;
 }
+
+/* ----------------------------- magazzino, ordini, appunti (come la web app) ----------------------------- */
+const unita = {'pz': 'pz', 'ml': 'ml', 'g': 'g'};
+const usiProdotto = {'interno': 'Uso interno', 'vendita': 'In vendita', 'entrambi': 'Interno e vendita'};
+
+/// segno: +1 aumenta la giacenza, -1 la diminuisce, 0 = rettifica (la quantità salvata ha già il segno)
+const tipiMovimento = <String, ({String nome, int segno})>{
+  'carico': (nome: 'Carico', segno: 1),
+  'scarico': (nome: 'Scarico', segno: -1),
+  'consumo': (nome: 'Consumo', segno: -1),
+  'vendita': (nome: 'Vendita', segno: -1),
+  'rettifica': (nome: 'Rettifica inventario', segno: 0),
+  'reso': (nome: 'Reso al fornitore', segno: -1),
+};
+
+const statiOrdine = <String, ({String nome, int colore})>{
+  'bozza': (nome: 'Bozza', colore: 0xFF6B778C),
+  'inviato': (nome: 'Inviato', colore: 0xFFB26B00),
+  'parziale': (nome: 'Ricevuto in parte', colore: 0xFF2F6DB5),
+  'ricevuto': (nome: 'Ricevuto', colore: 0xFF1F7A55),
+  'annullato': (nome: 'Annullato', colore: 0xFF9AA0A6),
+};
+const statiOrdineAperti = ['bozza', 'inviato', 'parziale'];
+
+const coloriAppunti = {'giallo': 0xFFFFF1A8, 'rosa': 0xFFFAD4DA, 'verde': 0xFFD3F1DD, 'azzurro': 0xFFD6E8FA, 'lilla': 0xFFE6DAF7, 'bianco': 0xFFFFFFFF};
+const tipiCollegamento = {'cliente': 'Cliente', 'fornitore': 'Fornitore', 'prodotto': 'Prodotto', 'appuntamento': 'Appuntamento'};

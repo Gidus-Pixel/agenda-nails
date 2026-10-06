@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/date.dart';
 import '../../core/util.dart';
 import '../../dominio/agenda.dart';
+import '../../dominio/magazzino.dart';
 import '../../dominio/privacy.dart';
 import '../app.dart';
 import '../comuni.dart';
@@ -22,13 +23,20 @@ class PaginaArchivio extends StatelessWidget {
         builder: (context, _) {
           String desc(String a, Doc r) => switch (a) {
                 'clienti' => nomeCliente(r),
-                'appuntamenti' => '${F.dataOra(inizioApp(r))} — ${nomeCliente(d.get('clienti', comeStr(r['clienteId']))).isEmpty ? comeStr(r['clienteNome']) : nomeCliente(d.get('clienti', comeStr(r['clienteId'])))}',
-                'schede_lavoro' => '${F.dataKey(comeStr(r['data']))} — ${nomeCliente(d.get('clienti', comeStr(r['clienteId']))).isEmpty ? 'cliente eliminata' : nomeCliente(d.get('clienti', comeStr(r['clienteId'])))}',
+                'appuntamenti' => '${F.dataOra(inizioApp(r))} — ${nomeClienteDi(d, r)}',
+                'schede_lavoro' => '${F.dataKey(comeStr(r['data']))} — ${nomeClienteDi(d, r, vuoto: 'cliente eliminata')}',
                 'servizi' => comeStr(r['nome']),
                 'blocchi' => descriviBlocco(r),
+                'prodotti' => nomeProdottoConMarca(r),
+                'fornitori' => nomeFornitore(r),
+                'ordini_fornitore' => 'Ordine del ${F.dataKey(chiaveData(comeStr(r['dataCreazione'])))} — ${nomeFornitore(d.get('fornitori', comeStr(r['fornitoreId']))).isEmpty ? 'senza fornitore' : nomeFornitore(d.get('fornitori', comeStr(r['fornitoreId'])))}',
+                'appunti' => comeStr(r['titolo']).isNotEmpty ? comeStr(r['titolo']) : (comeStr(r['testo']).length > 60 ? '${comeStr(r['testo']).substring(0, 60)}…' : comeStr(r['testo'])),
                 _ => comeStr(r['nome'] ?? r['titolo'] ?? r['id']),
               };
-          const gruppi = [('clienti', 'Clienti'), ('appuntamenti', 'Appuntamenti'), ('schede_lavoro', 'Schede lavoro'), ('servizi', 'Servizi'), ('blocchi', 'Pause e chiusure')];
+          const gruppi = [
+            ('clienti', 'Clienti'), ('appuntamenti', 'Appuntamenti'), ('schede_lavoro', 'Schede lavoro'), ('servizi', 'Servizi'), ('blocchi', 'Pause e chiusure'),
+            ('prodotti', 'Prodotti'), ('fornitori', 'Fornitori'), ('ordini_fornitore', 'Ordini'), ('appunti', 'Appunti'),
+          ];
           final contenuto = <Widget>[];
           for (final (a, titolo) in gruppi) {
             final lista = d.elenco(a, archiviati: true).where((r) => r['archiviato'] == true).toList()..sort((x, y) => comeStr(y['archiviatoIl'] ?? y['updatedAt']).compareTo(comeStr(x['archiviatoIl'] ?? x['updatedAt'])));
@@ -89,6 +97,18 @@ class PaginaArchivio extends StatelessWidget {
       await d.inBlocco(() async {
         await d.eliminaMolti('foto', d.elenco('foto', archiviati: true).where((f) => f['schedaId'] == id).map((f) => comeStr(f['id'])).toList());
         await d.elimina('schede_lavoro', id);
+      });
+    } else if (a == 'prodotti') {
+      final mov = d.elenco('movimenti_magazzino', archiviati: true).where((m) => m['prodottoId'] == id).map((m) => comeStr(m['id'])).toList();
+      if (mov.isNotEmpty) {
+        final ok = await conferma(context, titolo: 'Il prodotto ha dei movimenti', messaggio: 'Verranno eliminati anche i suoi ${mov.length} movimenti di magazzino: i report su consumi e vendite passati non lo conteranno più.', ok: 'Elimina tutto', pericolo: true);
+        if (!ok || !context.mounted) return;
+      }
+      await d.inBlocco(() async {
+        final foto = comeStr(r['fotoId']);
+        if (foto.isNotEmpty) await d.elimina('foto', foto);
+        await d.eliminaMolti('movimenti_magazzino', mov);
+        await d.elimina('prodotti', id);
       });
     } else {
       await d.elimina(a, id);

@@ -25,6 +25,8 @@ Future<void> apriImpostazione(BuildContext context, String dove) {
     'blocchi' => const PaginaBlocchi(),
     'archivio' => const PaginaArchivio(),
     'info' => const PaginaInfo(),
+    'moduli' => const PaginaModuli(),
+    'magazzino' => const PaginaOpzioniMagazzino(),
     _ => const PaginaDati(),
   };
   return Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => pagina));
@@ -76,12 +78,31 @@ class _PaginaAltroState extends State<PaginaAltro> {
               ]),
             );
         final orari = d.cfg['orari'];
+        final inBarra = vociVisibili(context).map((v) => v.chiave).toSet();
+        final sezioni = [
+          if (d.moduloAttivo('magazzino') && !inBarra.contains('magazzino')) ('magazzino', Icons.inventory_2_outlined, 'Magazzino', '${d.conta('prodotti')} prodotti'),
+          if (d.moduloAttivo('ordini') && !inBarra.contains('ordini')) ('ordini', Icons.local_shipping_outlined, 'Ordini ai fornitori', '${d.elenco('ordini_fornitore').where((o) => statiOrdineAperti.contains(o['stato'])).length} aperti'),
+          if (d.moduloAttivo('fornitori') && !inBarra.contains('fornitori')) ('fornitori', Icons.storefront_outlined, 'Fornitori', '${d.conta('fornitori')} fornitori'),
+          if (d.moduloAttivo('appunti') && !inBarra.contains('appunti')) ('appunti', Icons.sticky_note_2_outlined, 'Appunti', '${d.conta('appunti')} appunti'),
+          if (d.moduloAttivo('report') && !inBarra.contains('report')) ('report', Icons.insights_outlined, 'Report', 'Incassi, servizi, consumi, spesa'),
+        ];
         return Scaffold(
           appBar: AppBar(title: const Text('Altro')),
           body: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 760),
               child: ListView(padding: const EdgeInsets.fromLTRB(S.l, S.s, S.l, S.xxl * 2), children: [
+                if (sezioni.isNotEmpty)
+                  gruppo('Gestione', [
+                    for (final (k, ic, titolo, sotto) in sezioni)
+                      ListTile(
+                        leading: Container(width: 40, height: 40, decoration: BoxDecoration(color: cs.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)), child: Icon(ic, color: cs.primary)),
+                        title: Text(titolo),
+                        subtitle: Text(sotto),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => apriSezione(context, k),
+                      ),
+                  ]),
                 gruppo('I tuoi dati', [
                   voce(Icons.cloud_done_outlined, 'Backup e cloud', cloud.attivo ? 'Cloud attivo · ${cloud.esito.testo}' : 'Backup, ripristino, sincronizzazione tra dispositivi', 'dati',
                       coda: cloud.attivo ? Icon(cloud.esito.stato == 'errore' ? Icons.error_outline_rounded : Icons.check_circle_rounded, color: cloud.esito.stato == 'errore' ? cs.error : const Color(0xFF1F7A55)) : null),
@@ -98,6 +119,8 @@ class _PaginaAltroState extends State<PaginaAltro> {
                   voce(Icons.calendar_view_week_outlined, 'Agenda', 'Intervallo, tempo di pulizia, vista, colori', 'agenda'),
                   voce(Icons.groups_outlined, 'Operatrici', '${d.operatrici.length} ${d.operatrici.length == 1 ? 'operatrice' : 'operatrici'}', 'operatrici'),
                   voce(Icons.chat_outlined, 'Messaggi WhatsApp', 'Promemoria e richiamo', 'messaggi'),
+                  if (d.moduloAttivo('magazzino')) voce(Icons.inventory_outlined, 'Magazzino e ordini', 'Avvisi di scadenza, riordino, testo degli ordini', 'magazzino'),
+                  voce(Icons.dashboard_customize_outlined, 'Funzioni attive', 'Mostra o nascondi magazzino, fornitori, appunti, report…', 'moduli'),
                 ]),
                 gruppo('Informazioni', [
                   voce(Icons.info_outline_rounded, 'Informazioni e privacy', 'Versione $versioneApp · note fiscali', 'info'),

@@ -4,8 +4,10 @@ import '../../core/config.dart';
 import '../../core/date.dart';
 import '../../core/util.dart';
 import '../../dominio/agenda.dart';
+import '../../dominio/magazzino.dart';
 import '../app.dart';
 import '../comuni.dart';
+import '../fornitori/ordini.dart' show scegliProdotto;
 import '../tema.dart';
 import 'pagina_altro.dart';
 
@@ -89,7 +91,10 @@ class _ModuloServizioState extends State<_ModuloServizio> {
     _cusc.text = comeStr(s?['cuscinetto']);
     _cat.text = comeStr(s?['categoria']);
     _colore = coloreNum(s?['colore'], paletteServizi[d.conta('servizi') % paletteServizi.length]);
+    _prodotti = comeListaDoc(s?['prodottiDefault']).map(clonaDoc).toList();
   }
+
+  List<Doc> _prodotti = [];
 
   @override
   void dispose() {
@@ -114,6 +119,7 @@ class _ModuloServizioState extends State<_ModuloServizio> {
     rec['richiamoGiorni'] = int.tryParse(_richiamo.text.trim());
     rec['cuscinetto'] = int.tryParse(_cusc.text.trim());
     rec['colore'] = esadecimale(_colore);
+    rec['prodottiDefault'] = [for (final x in _prodotti) if (numero(x['quantita']) > 0) {'prodottoId': x['prodottoId'], 'quantita': qta(numero(x['quantita']))}];
     await d.salva('servizi', rec);
     if (!mounted) return;
     Navigator.pop(context);
@@ -174,6 +180,40 @@ class _ModuloServizioState extends State<_ModuloServizio> {
                     child: CircleAvatar(radius: 20, backgroundColor: Color(p), child: (p & 0xFFFFFF) == (_colore & 0xFFFFFF) ? const Icon(Icons.check_rounded, color: Colors.white) : null),
                   ),
               ]),
+              if (d.moduloAttivo('magazzino')) ...[
+                const SizedBox(height: S.xl),
+                Sezione(
+                  titolo: 'Prodotti consumati di default',
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    Text('Quando completi un appuntamento con questo servizio, la scheda lavoro propone questi prodotti da scalare dal magazzino (moltiplicati per la quantità del servizio).', style: t.bodySmall),
+                    const SizedBox(height: S.s),
+                    for (final x in _prodotti)
+                      Row(key: ObjectKey(x), children: [
+                        Expanded(flex: 3, child: Text(nomeProdotto(d.get('prodotti', comeStr(x['prodottoId']))), style: t.bodyLarge)),
+                        Expanded(
+                          child: TextFormField(
+                            initialValue: testoQta(x['quantita']),
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(suffixText: comeStr(d.get('prodotti', comeStr(x['prodottoId']))?['unita'])),
+                            onChanged: (v) => x['quantita'] = qtaDaTesto(v) ?? 0,
+                          ),
+                        ),
+                        IconButton(onPressed: () => setState(() => _prodotti.remove(x)), icon: const Icon(Icons.close_rounded), tooltip: 'Togli'),
+                      ]),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: () async {
+                          final p = await scegliProdotto(context);
+                          if (p != null && !_prodotti.any((x) => x['prodottoId'] == p['id'])) setState(() => _prodotti.add({'prodottoId': p['id'], 'quantita': 1}));
+                        },
+                        icon: const Icon(Icons.add_rounded),
+                        label: const Text('Aggiungi prodotto'),
+                      ),
+                    ),
+                  ]),
+                ),
+              ],
               const SizedBox(height: S.xl),
               FilledButton(onPressed: _salva, style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)), child: const Text('Salva')),
             ]),

@@ -331,3 +331,10 @@ Uri? linkPromemoria(Dati d, Doc cliente, Doc app) => linkWhatsApp(
       compilaModello(comeStr(comeDoc(d.cfg['messaggi'])['promemoria']), valoriMessaggio(d, cliente, app)),
       prefisso: d.prefisso,
     );
+
+/// Nome della cliente di un appuntamento o di una scheda (anche se la cliente è stata eliminata).
+String nomeClienteDi(Dati d, Doc rec, {String vuoto = 'Cliente'}) {
+  final c = d.get('clienti', comeStr(rec['clienteId']));
+  if (c != null) return nomeCliente(c);
+  return comeStr(rec['clienteNome']).isNotEmpty ? comeStr(rec['clienteNome']) : vuoto;
+}

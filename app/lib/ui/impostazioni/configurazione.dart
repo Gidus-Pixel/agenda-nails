@@ -363,3 +363,95 @@ class _Anteprima extends StatelessWidget {
         ),
       );
 }
+
+/* ============================ Funzioni attive ============================ */
+class PaginaModuli extends StatelessWidget {
+  const PaginaModuli({super.key});
+  static const _moduli = [
+    ('agenda', 'Agenda', 'Appuntamenti, spostamenti, pause'),
+    ('clienti', 'Clienti', 'Schede, preferenze, consensi'),
+    ('storico', 'Storico lavori', 'Schede lavoro con foto'),
+    ('magazzino', 'Magazzino', 'Prodotti, giacenze, scadenze'),
+    ('fornitori', 'Fornitori', 'Anagrafica e contatti'),
+    ('ordini', 'Ordini', 'Ordini ai fornitori con carico automatico (richiede il magazzino)'),
+    ('appunti', 'Appunti', 'Note, promemoria, collegamenti'),
+    ('report', 'Report', 'Incassi, servizi, consumi, CSV'),
+  ];
+  @override
+  Widget build(BuildContext context) {
+    final d = context.dati;
+    return ListenableBuilder(
+      listenable: d,
+      builder: (context, _) {
+        final m = comeDoc(d.cfg['moduli']);
+        return Scaffold(
+          appBar: AppBar(title: const Text('Funzioni attive')),
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 760),
+              child: ListView(padding: const EdgeInsets.all(S.l), children: [
+                const Riquadro(testo: 'Le funzioni spente spariscono dal menu e dal cruscotto. I dati non vengono cancellati: riaccendendole li ritrovi.'),
+                const SizedBox(height: S.l),
+                Card(
+                  child: Column(children: [
+                    for (final (k, titolo, sotto) in _moduli)
+                      SwitchListTile(
+                        title: Text(titolo),
+                        subtitle: Text(sotto),
+                        value: m[k] != false,
+                        onChanged: (v) => modificaConfig(context, (c) => c['moduli'] = {...comeDoc(c['moduli']), k: v}),
+                      ),
+                  ]),
+                ),
+              ]),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/* ============================ Magazzino e ordini ============================ */
+class PaginaOpzioniMagazzino extends StatefulWidget {
+  const PaginaOpzioniMagazzino({super.key});
+  @override
+  State<PaginaOpzioniMagazzino> createState() => _PaginaOpzioniMagazzinoState();
+}
+
+class _PaginaOpzioniMagazzinoState extends State<PaginaOpzioniMagazzino> {
+  late final _scad = TextEditingController(text: comeStr(comeDoc(Ambito.of(context).dati.cfg['avvisi'])['scadenzaGiorni']));
+  late final _molt = TextEditingController(text: comeStr(comeDoc(Ambito.of(context).dati.cfg['magazzino'])['moltiplicatoreRiordino']));
+  late final _msg = TextEditingController(text: comeStr(Ambito.of(context).dati.cfg['messaggiOrdine']));
+  late final _cat = TextEditingController(text: comeListaStr(Ambito.of(context).dati.cfg['categorieProdotti']).join(', '));
+
+  @override
+  void dispose() {
+    for (final c in [_scad, _molt, _msg, _cat]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _salva() async {
+    await modificaConfig(context, (c) {
+      c['avvisi'] = {...comeDoc(c['avvisi']), 'scadenzaGiorni': (int.tryParse(_scad.text.trim()) ?? 30).clamp(1, 365)};
+      c['magazzino'] = {...comeDoc(c['magazzino']), 'moltiplicatoreRiordino': (int.tryParse(_molt.text.trim()) ?? 2).clamp(1, 20)};
+      c['messaggiOrdine'] = _msg.text.trim();
+      final cat = _cat.text.split(',').map((x) => x.trim()).where((x) => x.isNotEmpty).toSet().toList();
+      if (cat.isNotEmpty) c['categorieProdotti'] = cat;
+    });
+    if (mounted) {
+      Navigator.pop(context);
+      avvisa('Impostazioni del magazzino salvate');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => _PaginaModulo(titolo: 'Magazzino e ordini', suSalva: _salva, figli: [
+        Campo(etichetta: 'Avviso di scadenza (giorni prima)', controller: _scad, tastiera: TextInputType.number),
+        Campo(etichetta: 'Riordino: porta la giacenza a N volte la scorta minima', controller: _molt, tastiera: TextInputType.number),
+        Campo(etichetta: 'Inizio del messaggio d\'ordine', controller: _msg, righe: 3, aiuto: 'Segnaposto: {attivita} {fornitore} {referente}'),
+        Campo(etichetta: 'Categorie dei prodotti (separate da virgola)', controller: _cat, righe: 4, maiuscole: TextCapitalization.none),
+      ]);
+}

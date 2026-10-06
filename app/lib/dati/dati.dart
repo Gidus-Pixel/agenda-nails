@@ -207,7 +207,14 @@ class Dati extends ChangeNotifier {
     await salva('impostazioni', rec);
   }
 
-  bool moduloAttivo(String m) => comeDoc(_config['moduli'])[m] == true && const ['agenda', 'clienti', 'storico'].contains(m);
+  /// Moduli attivabili da Impostazioni (un modulo spento sparisce da menu e cruscotto).
+  /// "ordini" richiede anche "magazzino": senza prodotti non ci sono righe d'ordine.
+  bool moduloAttivo(String m) {
+    final mod = comeDoc(_config['moduli']);
+    if (mod[m] == false) return false;
+    if (m == 'ordini' && mod['magazzino'] == false) return false;
+    return true;
+  }
   List<Doc> get operatrici => comeListaDoc(_config['operatrici']);
   bool get piuOperatrici => operatrici.length > 1;
   int get slotMinuti => comeInt(comeDoc(_config['agenda'])['slotMinuti']) ?? 15;

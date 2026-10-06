@@ -12,7 +12,7 @@ Future<void> avvia(WidgetTester t, Size logica) async {
   t.view.devicePixelRatio = 2;
   t.view.physicalSize = logica * 2;
   addTearDown(t.view.reset);
-  navigazione.scheda = 0;
+  navigazione.scheda = 'oggi';
   final d = await datiDiProva();
   await caricaDatiDemo(d, configura: true);
   await t.pumpWidget(AppAgenda(dati: d, cloud: Cloud(d)));
@@ -55,7 +55,24 @@ void main() {
     t.state<NavigatorState>(find.byType(Navigator).first).pop();
     await t.pumpAndSettle();
 
+    await scheda(t, 'Magazzino');
+    expect(find.text('Gel costruttore rosa (prova)'), findsOneWidget);
+    await t.ensureVisible(find.text('Gel costruttore rosa (prova)'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Gel costruttore rosa (prova)'));
+    await t.pumpAndSettle();
+    expect(find.textContaining('Movimenti'), findsOneWidget);
+    t.state<NavigatorState>(find.byType(Navigator).first).pop();
+    await t.pumpAndSettle();
+
     await scheda(t, 'Altro');
+    for (final s in ['Ordini ai fornitori', 'Fornitori', 'Appunti', 'Report']) {
+      await t.tap(find.text(s).first);
+      await t.pumpAndSettle();
+      expect(t.takeException(), isNull, reason: s);
+      t.state<NavigatorState>(find.byType(Navigator).first).pop();
+      await t.pumpAndSettle();
+    }
     expect(find.text('Backup e cloud'), findsOneWidget);
     await t.tap(find.text('Backup e cloud'));
     await t.pumpAndSettle();
@@ -73,6 +90,9 @@ void main() {
     await t.tap(find.text('Anna Prova').first);
     await t.pumpAndSettle();
     expect(find.text('Storico lavori'), findsOneWidget);
-    expect(t.takeException(), isNull);
+    for (final s in ['Magazzino', 'Ordini', 'Fornitori', 'Appunti', 'Report']) {
+      await scheda(t, s);
+      expect(t.takeException(), isNull, reason: s);
+    }
   });
 }

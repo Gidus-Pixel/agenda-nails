@@ -389,3 +389,70 @@ String giornoRelativo(DateTime d) {
   if (g == -1) return 'Ieri';
   return F.giornoLungo(d);
 }
+
+/// Etichetta colorata per tipo: pericolo | avviso | ok | info.
+class EtichettaTipo extends StatelessWidget {
+  const EtichettaTipo(this.testo, this.tipo, {super.key});
+  final String testo, tipo;
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final c = switch (tipo) {
+      'pericolo' => const Color(0xFFB42318),
+      'avviso' => const Color(0xFF9A5B00),
+      'ok' => const Color(0xFF1F7A55),
+      _ => cs.onSurfaceVariant,
+    };
+    return Etichetta(testo, colore: c);
+  }
+}
+
+/// Riga "etichetta: valore" delle schede.
+class RigaKv extends StatelessWidget {
+  const RigaKv(this.etichetta, this.valore, {super.key, this.larghezza = 120});
+  final String etichetta, valore;
+  final double larghezza;
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        SizedBox(width: larghezza, child: Text(etichetta, style: t.labelLarge?.copyWith(color: cs.onSurfaceVariant))),
+        Expanded(child: Text(valore.isEmpty ? '—' : valore, style: t.bodyLarge)),
+      ]),
+    );
+  }
+}
+
+/// Riga di scelta in un modulo (apre un elenco di opzioni).
+class CampoScelta<T> extends StatelessWidget {
+  const CampoScelta({super.key, required this.etichetta, required this.valore, required this.opzioni, required this.suCambio, this.vuoto = '—'});
+  final String etichetta;
+  final T? valore;
+  final List<(T, String)> opzioni;
+  final ValueChanged<T?> suCambio;
+  final String vuoto;
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: S.m),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(etichetta, style: t.labelLarge),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<T?>(
+          key: ValueKey(valore),
+          initialValue: opzioni.any((o) => o.$1 == valore) ? valore : null,
+          isExpanded: true,
+          items: [
+            DropdownMenuItem<T?>(value: null, child: Text(vuoto)),
+            for (final o in opzioni) DropdownMenuItem<T?>(value: o.$1, child: Text(o.$2, overflow: TextOverflow.ellipsis)),
+          ],
+          onChanged: suCambio,
+        ),
+      ]),
+    );
+  }
+}

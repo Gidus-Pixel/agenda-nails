@@ -13,6 +13,7 @@ import '../agenda/azioni.dart';
 import '../agenda/dettaglio_appuntamento.dart';
 import '../agenda/modulo_appuntamento.dart';
 import '../app.dart';
+import '../appunti/pagina_appunti.dart';
 import '../comuni.dart';
 import '../foto.dart';
 import '../piattaforma.dart';
@@ -135,6 +136,7 @@ class SchedaCliente extends StatelessWidget {
                 ),
             ]),
           ),
+          if (d.moduloAttivo('appunti')) ...[const SizedBox(height: S.l), SezioneAppunti(tipo: 'cliente', id: id)],
           if (comeStr(c['note']).isNotEmpty || comeStr(c['email']).isNotEmpty || comeStr(c['dataNascita']).isNotEmpty) ...[
             const SizedBox(height: S.l),
             Sezione(

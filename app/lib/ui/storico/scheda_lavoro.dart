@@ -6,9 +6,11 @@ import '../../core/config.dart';
 import '../../core/date.dart';
 import '../../core/util.dart';
 import '../../dominio/agenda.dart';
+import '../../dominio/magazzino.dart';
 import '../app.dart';
 import '../comuni.dart';
 import '../foto.dart';
+import '../fornitori/ordini.dart' show scegliProdotto;
 import '../piattaforma.dart';
 import '../tema.dart';
 
@@ -64,7 +66,7 @@ class _SchedaLavoroState extends State<SchedaLavoro> {
             'ora': app != null ? D.hhmm(inizioApp(app)) : D.hhmm(DateTime.now()),
             'servizi': app != null ? clona(serviziApp(app)) : <Doc>[],
             'tecnica': comeStr(p['tecnica']), 'forma': comeStr(p['forma']), 'lunghezza': comeStr(p['lunghezza']), 'colori': '',
-            'prodotti': <Doc>[], 'durataRealeMin': app != null ? durataApp(app) : null, 'importoCent': app != null ? (comeInt(app['prezzoTotaleCent']) ?? 0) : null,
+            'prodotti': app != null && d.moduloAttivo('magazzino') ? prodottiDaServizi(d, serviziApp(app)) : <Doc>[], 'durataRealeMin': app != null ? durataApp(app) : null, 'importoCent': app != null ? (comeInt(app['prezzoTotaleCent']) ?? 0) : null,
             'metodoPagamento': '', 'note': '', 'noteProssimaVolta': '', 'archiviato': false,
             if (app?['demo'] == true) 'demo': true,
           };
@@ -128,7 +130,10 @@ class _SchedaLavoroState extends State<SchedaLavoro> {
       'forma': _forma,
       'lunghezza': _lunghezza,
       'colori': _colori.text.trim(),
-      'prodotti': _prodotti.where((x) => comeStr(x['nome']).trim().isNotEmpty).map((x) => {...x, 'nome': comeStr(x['nome']).trim(), 'quantita': comeStr(x['quantita']).replaceAll(',', '.'), 'scala': false}).toList(),
+      'prodotti': _prodotti
+          .where((x) => comeStr(x['prodottoId']).isNotEmpty || comeStr(x['nome']).trim().isNotEmpty)
+          .map((x) => {...x, 'nome': comeStr(x['nome']).trim(), 'quantita': comeStr(x['quantita']).replaceAll(',', '.'), 'scala': x['scala'] == true && comeStr(x['prodottoId']).isNotEmpty && d.moduloAttivo('magazzino')})
+          .toList(),
       'durataRealeMin': int.tryParse(_durata.text.trim()),
       'importoCent': F.centDaTesto(_importo.text) ?? 0,
       'metodoPagamento': _pagamento,
@@ -136,6 +141,30 @@ class _SchedaLavoroState extends State<SchedaLavoro> {
       'noteProssimaVolta': _prossima.text.trim(),
     });
     rec['id'] ??= uid();
+    // Consumi di magazzino: ricalcolati da zero a ogni salvataggio (solo i prodotti con "Scala dal magazzino")
+    final consumi = consumiScheda(d, rec, cli != null ? nomeCliente(cli) : 'cliente');
+    if (consumi.nuovi.isNotEmpty) {
+      final gia = mappaGiacenze(d);
+      for (final m in consumi.precedenti) {
+        gia[comeStr(m['prodottoId'])] = qta((gia[comeStr(m['prodottoId'])] ?? 0) - numero(m['quantita']));
+      }
+      final uscite = <String, num>{};
+      for (final m in consumi.nuovi) {
+        uscite[comeStr(m['prodottoId'])] = qta((uscite[comeStr(m['prodottoId'])] ?? 0) - numero(m['quantita']));
+      }
+      final negativi = [
+        for (final e in uscite.entries)
+          if (qta((gia[e.key] ?? 0) - e.value) < 0)
+            '${nomeProdotto(d.get('prodotti', e.key))}: risultano ${fmtQta(gia[e.key] ?? 0, comeStr(d.get('prodotti', e.key)?['unita']))}, ne usi ${fmtQta(e.value, comeStr(d.get('prodotti', e.key)?['unita']))}',
+      ];
+      if (negativi.isNotEmpty) {
+        final ok = await conferma(context, titolo: 'Giacenza insufficiente', messaggio: 'Alcuni prodotti andrebbero sotto zero:\n${negativi.map((x) => '• $x').join('\n')}\n\nPuoi salvare lo stesso e correggere poi con una rettifica inventario.', ok: 'Salva comunque');
+        if (!ok || !mounted) {
+          if (mounted) setState(() => _salvando = false);
+          return;
+        }
+      }
+    }
     final nuove = <Doc>[];
     for (final f in _fotoNuove) {
       final id = uid();
@@ -149,6 +178,8 @@ class _SchedaLavoroState extends State<SchedaLavoro> {
       if (_fotoRimosse.isNotEmpty) await d.eliminaMolti('foto', _fotoRimosse.toList());
       rec['fotoIds'] = [..._fotoEsistenti.where((f) => !_fotoRimosse.contains(f['id'])).map((f) => f['id']), ...nuove.map((f) => f['id'])];
       await d.salva('schede_lavoro', rec);
+      await d.eliminaMolti('movimenti_magazzino', [for (final m in consumi.precedenti) comeStr(m['id'])]);
+      await d.salvaMolti('movimenti_magazzino', consumi.nuovi);
       if (app != null && !_modifica) {
         appPrec = {'stato': app['stato'], 'schedaId': app['schedaId']};
         app['stato'] = 'completato';
@@ -159,11 +190,13 @@ class _SchedaLavoroState extends State<SchedaLavoro> {
     if (!mounted) return;
     Navigator.pop(context);
     vibra(true);
+    final msgMag = consumi.nuovi.isEmpty ? '' : ' · ${consumi.nuovi.length} prodott${consumi.nuovi.length == 1 ? 'o scalato' : 'i scalati'} dal magazzino';
     if (_modifica) {
-      avvisa('Scheda lavoro aggiornata');
+      avvisa('Scheda lavoro aggiornata$msgMag');
     } else {
-      avvisa(app != null ? 'Appuntamento completato · scheda salvata${cli != null ? ' per ${comeStr(cli['nome'])}' : ''}' : 'Scheda lavoro salvata', annulla: () async {
+      avvisa((app != null ? 'Appuntamento completato · scheda salvata' : 'Scheda lavoro salvata') + msgMag, annulla: () async {
         await d.inBlocco(() async {
+          await d.eliminaMolti('movimenti_magazzino', [for (final m in consumi.nuovi) comeStr(m['id'])]);
           await d.eliminaMolti('foto', [for (final f in nuove) comeStr(f['id'])]);
           await d.elimina('schede_lavoro', comeStr(rec['id']));
           if (app != null && appPrec != null) {
@@ -211,6 +244,7 @@ class _SchedaLavoroState extends State<SchedaLavoro> {
     final app = widget.app;
     final acconto = comeInt(app?['accontoCent']) ?? 0;
     final esistenti = _fotoEsistenti.where((f) => !_fotoRimosse.contains(f['id'])).toList();
+    final magazzino = d.moduloAttivo('magazzino');
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(icon: const Icon(Icons.close_rounded), tooltip: 'Chiudi', onPressed: () => Navigator.pop(context)),
@@ -295,20 +329,48 @@ class _SchedaLavoroState extends State<SchedaLavoro> {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   for (final p in _prodotti)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: S.s),
-                      child: Row(children: [
-                        Expanded(flex: 3, child: TextFormField(initialValue: comeStr(p['nome']), decoration: const InputDecoration(hintText: 'Prodotto'), onChanged: (v) => p['nome'] = v)),
-                        const SizedBox(width: 6),
-                        Expanded(child: TextFormField(initialValue: comeStr(p['quantita']), decoration: const InputDecoration(hintText: 'Q.tà'), keyboardType: const TextInputType.numberWithOptions(decimal: true), onChanged: (v) => p['quantita'] = v)),
-                        const SizedBox(width: 6),
-                        Expanded(flex: 2, child: TextFormField(initialValue: comeStr(p['lotto']), decoration: const InputDecoration(hintText: 'Lotto'), onChanged: (v) => p['lotto'] = v)),
-                        IconButton(onPressed: () => setState(() => _prodotti.remove(p)), icon: const Icon(Icons.close_rounded), tooltip: 'Rimuovi'),
+                      key: ObjectKey(p),
+                      padding: const EdgeInsets.only(bottom: S.m),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                        Row(children: [
+                          Expanded(
+                            child: comeStr(p['prodottoId']).isNotEmpty
+                                ? Text(nomeProdotto(d.get('prodotti', comeStr(p['prodottoId'])) ?? {'nome': p['nome']}), style: t.titleSmall)
+                                : TextFormField(initialValue: comeStr(p['nome']), decoration: const InputDecoration(hintText: 'Nome del prodotto'), onChanged: (v) => p['nome'] = v),
+                          ),
+                          IconButton(onPressed: () => setState(() => _prodotti.remove(p)), icon: const Icon(Icons.close_rounded), tooltip: 'Rimuovi'),
+                        ]),
+                        const SizedBox(height: 4),
+                        Row(children: [
+                          Expanded(child: TextFormField(initialValue: testoQta(p['quantita']), decoration: const InputDecoration(labelText: 'Quantità'), keyboardType: const TextInputType.numberWithOptions(decimal: true), onChanged: (v) => p['quantita'] = v)),
+                          const SizedBox(width: 6),
+                          Expanded(child: TextFormField(initialValue: comeStr(p['lotto']), decoration: const InputDecoration(labelText: 'Lotto'), onChanged: (v) => p['lotto'] = v)),
+                        ]),
+                        if (magazzino && comeStr(p['prodottoId']).isNotEmpty)
+                          CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                            value: p['scala'] == true,
+                            onChanged: (v) => setState(() => p['scala'] = v == true),
+                            title: const Text('Scala dal magazzino'),
+                          ),
                       ]),
                     ),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(onPressed: () => setState(() => _prodotti.add({'nome': '', 'quantita': '', 'lotto': '', 'prodottoId': null, 'scala': false})), icon: const Icon(Icons.add_rounded), label: const Text('Aggiungi prodotto')),
-                  ),
+                  if (magazzino) Text('Solo i prodotti con "Scala dal magazzino" vengono scaricati dalla giacenza, al salvataggio.', style: t.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+                  Wrap(spacing: S.s, children: [
+                    if (magazzino)
+                      TextButton.icon(
+                        onPressed: () async {
+                          final x = await scegliProdotto(context);
+                          if (x != null) {
+                            setState(() => _prodotti.add({'prodottoId': x['id'], 'nome': nomeProdotto(x), 'quantita': 1, 'lotto': comeStr(x['lotto']), 'scala': true}));
+                          }
+                        },
+                        icon: const Icon(Icons.inventory_2_outlined),
+                        label: const Text('Dal magazzino'),
+                      ),
+                    TextButton.icon(onPressed: () => setState(() => _prodotti.add({'nome': '', 'quantita': '', 'lotto': '', 'prodottoId': null, 'scala': false})), icon: const Icon(Icons.add_rounded), label: Text(magazzino ? 'Scritto a mano' : 'Aggiungi prodotto')),
+                  ]),
                 ]),
               ),
               const SizedBox(height: S.l),

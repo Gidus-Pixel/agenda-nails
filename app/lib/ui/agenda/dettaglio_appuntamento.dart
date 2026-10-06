@@ -139,7 +139,11 @@ class _Dettaglio extends StatelessWidget {
           ],
           const SizedBox(height: S.l),
           Row(children: [
-            azione(Icons.chat_rounded, 'WhatsApp', tel.isEmpty ? null : () => apriLink(context, linkPromemoria(d, cli!, app)), principale: true),
+            azione(Icons.chat_rounded, app['promemoriaInviatoIl'] != null ? 'Inviato ✓' : 'WhatsApp', tel.isEmpty ? null : () async {
+              await apriLink(context, linkPromemoria(d, cli!, app));
+              app['promemoriaInviatoIl'] = adessoIso();
+              await d.salva('appuntamenti', app);
+            }, principale: true),
             azione(Icons.call_rounded, 'Chiama', tel.isEmpty ? null : () => chiama(context, tel)),
             azione(Icons.open_with_rounded, 'Sposta', aperto ? () => _sposta(context, app) : null),
             azione(Icons.edit_outlined, 'Modifica', () async {

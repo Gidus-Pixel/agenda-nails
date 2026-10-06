@@ -3,15 +3,21 @@ import 'package:flutter/material.dart';
 import '../core/date.dart';
 import '../core/util.dart';
 import '../dominio/agenda.dart';
+import '../dominio/appunti.dart';
 import '../dominio/demo.dart';
+import '../dominio/magazzino.dart';
 import 'agenda/azioni.dart';
 import 'agenda/dettaglio_appuntamento.dart';
 import 'agenda/modulo_appuntamento.dart';
 import 'app.dart';
+import 'appunti/pagina_appunti.dart';
 import 'clienti/pagina_clienti.dart';
 import 'clienti/scheda_cliente.dart';
 import 'comuni.dart';
+import 'fornitori/ordini.dart';
 import 'impostazioni/pagina_altro.dart';
+import 'magazzino/scheda_prodotto.dart';
+import 'piattaforma.dart';
 import 'tema.dart';
 
 /// Cruscotto "Oggi": appuntamenti di oggi e domani, incassi, clienti da ricontattare, stato del backup.
@@ -32,9 +38,14 @@ class PaginaOggi extends StatelessWidget {
         final appOggi = del(oggi), appDomani = del(domani);
         final visite = tutteLeVisite(d);
         final kOggi = D.key(oggi);
-        final incOggi = incassoTra(visite, kOggi, kOggi);
+        final incOggi = incassoTra(visite, kOggi, kOggi) + venditeTra(d, kOggi, kOggi);
         final lun = D.inizioSettimana(oggi);
-        final incSett = incassoTra(visite, D.key(lun), D.key(D.aggiungiGiorni(lun, 6)));
+        final incSett = incassoTra(visite, D.key(lun), D.key(D.aggiungiGiorni(lun, 6))) + venditeTra(d, D.key(lun), D.key(D.aggiungiGiorni(lun, 6)));
+        final mag = d.moduloAttivo('magazzino'), ord = d.moduloAttivo('ordini'), app = d.moduloAttivo('appunti');
+        final avvMag = mag ? avvisiMagazzino(d) : null;
+        final promemoria = app ? promemoriaInArrivo(d) : <Doc>[];
+        final ordini = ord ? d.elenco('ordini_fornitore').where((o) => statiOrdineAttesa.contains(o['stato'])).toList() : <Doc>[];
+        final daAvvisare = appDomani.where((a) => ['prenotato', 'confermato'].contains(statoApp(a)) && comeStr(d.get('clienti', comeStr(a['clienteId']))?['telefono']).isNotEmpty).toList();
         final previsto = appOggi.where((a) => ['prenotato', 'confermato'].contains(statoApp(a))).fold(0, (s, a) => s + (comeInt(a['prezzoTotaleCent']) ?? 0));
         final richiami = clientiDaRicontattare(d);
         final prossimo = appOggi.where((a) => fineApp(a).isAfter(ora) && ['prenotato', 'confermato'].contains(statoApp(a))).firstOrNull;
@@ -50,7 +61,7 @@ class PaginaOggi extends StatelessWidget {
           ],
           Sezione(
             titolo: appOggi.isEmpty ? 'Oggi' : 'Oggi · ${appOggi.length} ${appOggi.length == 1 ? 'appuntamento' : 'appuntamenti'}',
-            azione: TextButton(onPressed: () => navigazione.vai(1, giorno: oggi), child: const Text('Agenda')),
+            azione: TextButton(onPressed: () => navigazione.vai('agenda', giorno: oggi), child: const Text('Agenda')),
             child: appOggi.isEmpty
                 ? Text(intervalliGiorno(d, oggi).isEmpty && d.cfg['orari'] is Map ? 'Oggi è giorno di chiusura. Riposati! 🌿' : 'Nessun appuntamento oggi.', style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant))
                 : Column(children: [for (final a in appOggi) RigaAppuntamento(app: a, suTocco: () => apriAppuntamento(context, a))]),
@@ -58,10 +69,22 @@ class PaginaOggi extends StatelessWidget {
           const SizedBox(height: S.l),
           Sezione(
             titolo: 'Domani${appDomani.isEmpty ? '' : ' · ${appDomani.length}'}',
-            azione: TextButton(onPressed: () => navigazione.vai(1, giorno: domani), child: const Text('Vedi')),
+            azione: TextButton(onPressed: () => navigazione.vai('agenda', giorno: domani), child: const Text('Vedi')),
             child: appDomani.isEmpty
                 ? Text('Nessun appuntamento domani.', style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant))
-                : Column(children: [for (final a in appDomani) RigaAppuntamento(app: a, suTocco: () => apriAppuntamento(context, a))]),
+                : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    for (final a in appDomani) RigaAppuntamento(app: a, suTocco: () => apriAppuntamento(context, a)),
+                    if (d.cfg['promemoriaWhatsApp'] != false && daAvvisare.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: S.s),
+                        child: Builder(builder: (context) {
+                          final mancano = daAvvisare.where((a) => a['promemoriaInviatoIl'] == null).length;
+                          return mancano > 0
+                              ? FilledButton.icon(onPressed: () => apriCodaPromemoria(context, daAvvisare), icon: const Icon(Icons.chat_rounded), label: Text('Invia i promemoria ($mancano)'))
+                              : OutlinedButton.icon(onPressed: () => apriCodaPromemoria(context, daAvvisare), icon: const Icon(Icons.done_all_rounded), label: const Text('Promemoria inviati'));
+                        }),
+                      ),
+                  ]),
           ),
         ]);
 
@@ -80,8 +103,65 @@ class PaginaOggi extends StatelessWidget {
             Sezione(
               titolo: 'Da ricontattare',
               padding: const EdgeInsets.fromLTRB(S.s, S.m, S.s, S.s),
-              azione: TextButton(onPressed: () => navigazione.vai(2), child: const Text('Tutte')),
+              azione: TextButton(onPressed: () => navigazione.vai('clienti'), child: const Text('Tutte')),
               child: Column(children: [for (final r in richiami.take(4)) RigaRichiamo(r: r, suApri: () => apriSchedaCliente(context, comeStr(r.cliente['id'])))]),
+            ),
+            const SizedBox(height: S.l),
+          ],
+          if (avvMag != null && avvMag.totale > 0) ...[
+            Sezione(
+              titolo: 'Magazzino',
+              padding: const EdgeInsets.fromLTRB(S.s, S.m, S.s, S.s),
+              azione: TextButton(onPressed: () => navigazione.vai('magazzino'), child: const Text('Apri')),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                for (final (x, testo, tipo) in [
+                  for (final x in avvMag.negativi) (x, 'giacenza negativa: controlla i carichi', 'pericolo'),
+                  for (final x in avvMag.sottoScorta.where((x) => x.g >= 0)) (x, 'sotto scorta (minimo ${fmtQta(x.p['scortaMinima'], comeStr(x.p['unita']))})', 'avviso'),
+                  for (final x in avvMag.scaduti) (x, 'scaduto il ${F.dataKey(comeStr(x.p['scadenza']))}', 'pericolo'),
+                  for (final x in avvMag.inScadenza) (x, 'scade il ${F.dataKey(comeStr(x.p['scadenza']))}', 'avviso'),
+                  for (final x in avvMag.paoSuperato) (x, 'aperto da oltre il PAO (dal ${F.dataKey(x.pao)})', 'pericolo'),
+                ].take(6))
+                  ListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: S.s),
+                    leading: Icon(tipo == 'pericolo' ? Icons.error_outline_rounded : Icons.warning_amber_rounded, color: tipo == 'pericolo' ? const Color(0xFFB42318) : const Color(0xFF9A5B00)),
+                    title: Text(nomeProdotto(x.p)),
+                    subtitle: Text('$testo · hai ${fmtQta(x.g, comeStr(x.p['unita']))}'),
+                    onTap: () => apriProdotto(context, comeStr(x.p['id'])),
+                  ),
+                if (ord && avvMag.sottoScorta.isNotEmpty)
+                  Padding(padding: const EdgeInsets.fromLTRB(S.s, S.s, S.s, 0), child: OutlinedButton.icon(onPressed: () => creaOrdiniSottoScorta(context), icon: const Icon(Icons.local_shipping_outlined), label: const Text('Prepara gli ordini'))),
+              ]),
+            ),
+            const SizedBox(height: S.l),
+          ],
+          if (ordini.isNotEmpty) ...[
+            Sezione(
+              titolo: 'Ordini in attesa',
+              padding: const EdgeInsets.fromLTRB(S.s, S.m, S.s, S.s),
+              azione: TextButton(onPressed: () => navigazione.vai('ordini'), child: const Text('Tutti')),
+              child: Column(children: [for (final o in ordini.take(5)) RigaOrdine(o: o)]),
+            ),
+            const SizedBox(height: S.l),
+          ],
+          if (app) ...[
+            Sezione(
+              titolo: 'Promemoria',
+              padding: const EdgeInsets.fromLTRB(S.s, S.m, S.s, S.s),
+              azione: TextButton(onPressed: () => navigazione.vai('appunti'), child: const Text('Appunti')),
+              child: promemoria.isEmpty
+                  ? Padding(padding: const EdgeInsets.all(S.s), child: Text('Nessun promemoria nei prossimi 7 giorni.', style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant)))
+                  : Column(children: [
+                      for (final a in promemoria.take(6))
+                        ListTile(
+                          dense: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: S.s),
+                          leading: Icon(Icons.alarm_rounded, color: statoPromemoria(a)?.$2 == 'pericolo' ? const Color(0xFFB42318) : cs.primary),
+                          title: Text(comeStr(a['titolo']).isNotEmpty ? comeStr(a['titolo']) : comeStr(a['testo']), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          subtitle: Text(statoPromemoria(a)?.$1 ?? ''),
+                          onTap: () => apriAppunto(context, appunto: a),
+                        ),
+                    ]),
             ),
             const SizedBox(height: S.l),
           ],
@@ -104,7 +184,7 @@ class PaginaOggi extends StatelessWidget {
                         if (d.nomeAttivita.isNotEmpty) Text(d.nomeAttivita, style: t.bodyLarge?.copyWith(color: cs.onSurfaceVariant)),
                       ]),
                     ),
-                    IconButton(tooltip: 'Cerca una cliente', onPressed: () => navigazione.vai(2), icon: const Icon(Icons.person_search_outlined)),
+                    IconButton(tooltip: 'Cerca una cliente', onPressed: () => navigazione.vai('clienti'), icon: const Icon(Icons.person_search_outlined)),
                   ]),
                 ),
               ),
@@ -253,4 +333,52 @@ class _StatoBackup extends StatelessWidget {
       azioni: [if (scaduto) FilledButton(onPressed: () => apriImpostazione(context, 'dati'), child: const Text('Fai il backup'))],
     );
   }
+}
+
+const statiOrdineAttesa = ['inviato', 'parziale'];
+
+/// Promemoria WhatsApp per gli appuntamenti di domani: uno alla volta, segnando quelli inviati.
+Future<void> apriCodaPromemoria(BuildContext context, List<Doc> apps) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    constraints: const BoxConstraints(maxWidth: 640),
+    builder: (c) => ListenableBuilder(
+      listenable: c.dati,
+      builder: (c, _) {
+        final d = c.dati;
+        final t = Theme.of(c).textTheme;
+        return ListView(shrinkWrap: true, padding: const EdgeInsets.fromLTRB(S.l, 0, S.l, S.xl), children: [
+          Text('Promemoria per domani', style: t.headlineSmall),
+          const SizedBox(height: 4),
+          Text('Tocca WhatsApp: il messaggio si apre già scritto, lo invii tu. Poi torna qui per il successivo.', style: t.bodyMedium),
+          const SizedBox(height: S.m),
+          for (final a in apps)
+            Builder(builder: (c) {
+              final x = d.get('appuntamenti', comeStr(a['id'])) ?? a;
+              final cli = d.get('clienti', comeStr(x['clienteId']));
+              final inviato = x['promemoriaInviatoIl'] != null;
+              return ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(inviato ? Icons.check_circle_rounded : Icons.schedule_rounded, color: inviato ? const Color(0xFF1F7A55) : null),
+                title: Text(nomeCliente(cli)),
+                subtitle: Text('${D.hhmm(inizioApp(x))} · ${serviziTesto(x)}${inviato ? ' · inviato' : ''}'),
+                trailing: cli == null
+                    ? null
+                    : FilledButton.tonalIcon(
+                        onPressed: () async {
+                          await apriLink(c, linkPromemoria(d, cli, x));
+                          x['promemoriaInviatoIl'] = adessoIso();
+                          await d.salva('appuntamenti', x);
+                        },
+                        icon: const Icon(Icons.chat_rounded),
+                        label: const Text('WhatsApp'),
+                      ),
+              );
+            }),
+        ]);
+      },
+    ),
+  );
 }

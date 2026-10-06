@@ -6,10 +6,15 @@ import '../core/util.dart';
 import '../dati/dati.dart';
 import '../dominio/cloud.dart';
 import 'agenda/pagina_agenda.dart';
+import 'appunti/pagina_appunti.dart';
 import 'clienti/pagina_clienti.dart';
 import 'comuni.dart';
+import 'fornitori/pagina_fornitori.dart';
+import 'fornitori/ordini.dart';
 import 'impostazioni/pagina_altro.dart';
+import 'magazzino/pagina_magazzino.dart';
 import 'oggi.dart';
+import 'report/pagina_report.dart';
 import 'tema.dart';
 
 /// Rende disponibili dati e cloud a tutte le schermate.
@@ -30,11 +35,12 @@ extension AmbitoX on BuildContext {
 /// Contesto del navigatore principale: resta valido anche dopo aver chiuso un foglio o una finestra.
 BuildContext radice(BuildContext c) => Navigator.of(c, rootNavigator: true).context;
 
-/// Comandi tra le schede (es. "apri l'agenda su quel giorno").
+/// Comandi tra le schede (es. "apri l'agenda su quel giorno"). Le schede hanno un nome:
+/// oggi, agenda, clienti, magazzino, ordini, fornitori, appunti, report, altro.
 class Navigazione extends ChangeNotifier {
-  int scheda = 0;
+  String scheda = 'oggi';
   DateTime? giornoAgenda;
-  void vai(int s, {DateTime? giorno}) {
+  void vai(String s, {DateTime? giorno}) {
     scheda = s;
     if (giorno != null) giornoAgenda = giorno;
     notifyListeners();
@@ -82,10 +88,57 @@ class AppAgenda extends StatelessWidget {
 }
 
 class _Voce {
-  const _Voce(this.titolo, this.icona, this.iconaScelta, this.pagina);
-  final String titolo;
+  const _Voce(this.chiave, this.titolo, this.icona, this.iconaScelta);
+  final String chiave, titolo;
   final IconData icona, iconaScelta;
-  final Widget pagina;
+}
+
+const _tutte = [
+  _Voce('oggi', 'Oggi', Icons.wb_sunny_outlined, Icons.wb_sunny_rounded),
+  _Voce('agenda', 'Agenda', Icons.calendar_month_outlined, Icons.calendar_month_rounded),
+  _Voce('clienti', 'Clienti', Icons.people_outline_rounded, Icons.people_rounded),
+  _Voce('magazzino', 'Magazzino', Icons.inventory_2_outlined, Icons.inventory_2_rounded),
+  _Voce('ordini', 'Ordini', Icons.local_shipping_outlined, Icons.local_shipping_rounded),
+  _Voce('fornitori', 'Fornitori', Icons.storefront_outlined, Icons.storefront_rounded),
+  _Voce('appunti', 'Appunti', Icons.sticky_note_2_outlined, Icons.sticky_note_2_rounded),
+  _Voce('report', 'Report', Icons.insights_outlined, Icons.insights_rounded),
+  _Voce('altro', 'Altro', Icons.tune_outlined, Icons.tune_rounded),
+];
+
+/// Pagina principale di una sezione (usata come scheda o aperta sopra le altre sul telefono).
+Widget paginaSezione(String chiave) => switch (chiave) {
+      'agenda' => const PaginaAgenda(),
+      'clienti' => const PaginaClienti(),
+      'magazzino' => const PaginaMagazzino(),
+      'ordini' => const PaginaOrdini(),
+      'fornitori' => const PaginaFornitori(),
+      'appunti' => const PaginaAppunti(),
+      'report' => const PaginaReport(),
+      'altro' => const PaginaAltro(),
+      _ => const PaginaOggi(),
+    };
+
+/// Apre una sezione: come scheda se è nella barra, altrimenti come pagina sopra (telefono).
+void apriSezione(BuildContext context, String chiave) {
+  if (vociVisibili(context).any((v) => v.chiave == chiave)) {
+    navigazione.vai(chiave);
+  } else {
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => paginaSezione(chiave)));
+  }
+}
+
+/// Sezioni nella barra: sul telefono le principali (le altre sono in "Altro"), su tablet tutte.
+List<_Voce> vociVisibili(BuildContext context) {
+  final d = context.dati;
+  final tablet = eTablet(context);
+  bool attiva(String k) => switch (k) {
+        'oggi' || 'altro' => true,
+        'clienti' => d.moduloAttivo('clienti'),
+        'agenda' => d.moduloAttivo('agenda'),
+        'magazzino' => d.moduloAttivo('magazzino'),
+        _ => tablet && d.moduloAttivo(k),
+      };
+  return [for (final v in _tutte) if (attiva(v.chiave)) v];
 }
 
 /// Struttura principale: barra in basso sul telefono, barra laterale su tablet.
@@ -97,12 +150,7 @@ class Guscio extends StatefulWidget {
 }
 
 class _GuscioState extends State<Guscio> with WidgetsBindingObserver {
-  late final List<_Voce> _voci = [
-    const _Voce('Oggi', Icons.wb_sunny_outlined, Icons.wb_sunny_rounded, PaginaOggi()),
-    const _Voce('Agenda', Icons.calendar_month_outlined, Icons.calendar_month_rounded, PaginaAgenda()),
-    const _Voce('Clienti', Icons.people_outline_rounded, Icons.people_rounded, PaginaClienti()),
-    const _Voce('Altro', Icons.tune_outlined, Icons.tune_rounded, PaginaAltro()),
-  ];
+  final Map<String, Widget> _pagine = {};
 
   @override
   void initState() {
@@ -112,10 +160,12 @@ class _GuscioState extends State<Guscio> with WidgetsBindingObserver {
     final s = widget.schermataIniziale;
     if (s != null) {
       navigazione.scheda = switch (s) {
-        'agenda' || 'agenda-settimana' || 'appuntamento' => 1,
-        'clienti' || 'cliente' => 2,
-        'impostazioni' || 'impostazioni-orari' || 'dati' => 3,
-        _ => 0,
+        'agenda' || 'agenda-settimana' || 'appuntamento' => 'agenda',
+        'clienti' || 'cliente' => 'clienti',
+        'magazzino' || 'prodotto' => 'magazzino',
+        'ordini' || 'fornitori' || 'appunti' || 'report' => s,
+        'impostazioni' || 'impostazioni-orari' || 'dati' => 'altro',
+        _ => 'oggi',
       };
     }
   }
@@ -127,7 +177,17 @@ class _GuscioState extends State<Guscio> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  void _cambio() => setState(() {});
+  void _cambio() {
+    if (!mounted) return;
+    final voci = vociVisibili(context);
+    if (!voci.any((v) => v.chiave == navigazione.scheda)) {
+      // sezione non presente nella barra (telefono): si apre sopra, la scheda resta "Altro"
+      final k = navigazione.scheda;
+      navigazione.scheda = 'altro';
+      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => paginaSezione(k)));
+    }
+    setState(() {});
+  }
 
   /// Tornando nell'app si sincronizza e si aggiornano gli orari ("adesso"); uscendo si salva nel cloud.
   @override
@@ -143,38 +203,58 @@ class _GuscioState extends State<Guscio> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final i = navigazione.scheda;
-    final corpo = IndexedStack(index: i, children: [for (final v in _voci) v.pagina]);
-    if (eTablet(context)) {
-      final cs = Theme.of(context).colorScheme;
-      return Scaffold(
-        body: Row(children: [
-          SafeArea(
-            right: false,
-            child: NavigationRail(
-              selectedIndex: i,
-              onDestinationSelected: (n) => navigazione.vai(n),
-              labelType: NavigationRailLabelType.all,
-              groupAlignment: -0.85,
-              leading: Padding(
-                padding: const EdgeInsets.only(bottom: S.l, top: S.s),
-                child: Icon(Icons.spa_rounded, color: cs.primary, size: 30),
+    return ListenableBuilder(
+      listenable: context.dati,
+      builder: (context, _) {
+        final voci = vociVisibili(context);
+        var i = voci.indexWhere((v) => v.chiave == navigazione.scheda);
+        if (i < 0) i = 0;
+        final corpo = IndexedStack(index: i, children: [
+          for (final v in voci) KeyedSubtree(key: ValueKey(v.chiave), child: _pagine.putIfAbsent(v.chiave, () => paginaSezione(v.chiave))),
+        ]);
+        void scegli(int n) {
+          vibra();
+          navigazione.vai(voci[n].chiave);
+        }
+
+        if (eTablet(context)) {
+          final cs = Theme.of(context).colorScheme;
+          return Scaffold(
+            body: Row(children: [
+              SafeArea(
+                right: false,
+                child: LayoutBuilder(
+                  builder: (context, v) => SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: v.maxHeight),
+                      child: IntrinsicHeight(
+                        child: NavigationRail(
+                          selectedIndex: i,
+                          onDestinationSelected: scegli,
+                          labelType: NavigationRailLabelType.all,
+                          groupAlignment: -0.9,
+                          leading: Padding(padding: const EdgeInsets.only(bottom: S.s, top: S.s), child: Icon(Icons.spa_rounded, color: cs.primary, size: 30)),
+                          destinations: [for (final v in voci) NavigationRailDestination(icon: Icon(v.icona), selectedIcon: Icon(v.iconaScelta), label: Text(v.titolo))],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
-              destinations: [for (final v in _voci) NavigationRailDestination(icon: Icon(v.icona), selectedIcon: Icon(v.iconaScelta), label: Text(v.titolo))],
-            ),
+              VerticalDivider(width: 1, color: cs.outlineVariant),
+              Expanded(child: corpo),
+            ]),
+          );
+        }
+        return Scaffold(
+          body: corpo,
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: i,
+            onDestinationSelected: scegli,
+            destinations: [for (final v in voci) NavigationDestination(icon: Icon(v.icona), selectedIcon: Icon(v.iconaScelta), label: v.titolo)],
           ),
-          VerticalDivider(width: 1, color: cs.outlineVariant),
-          Expanded(child: corpo),
-        ]),
-      );
-    }
-    return Scaffold(
-      body: corpo,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: i,
-        onDestinationSelected: (n) => navigazione.vai(n),
-        destinations: [for (final v in _voci) NavigationDestination(icon: Icon(v.icona), selectedIcon: Icon(v.iconaScelta), label: v.titolo)],
-      ),
+        );
+      },
     );
   }
 }

@@ -3,8 +3,9 @@ import '../core/date.dart';
 import '../core/util.dart';
 import '../dati/dati.dart';
 import 'agenda.dart';
+import 'magazzino.dart';
 
-bool ciSonoDatiDemo(Dati d) => ['clienti', 'appuntamenti', 'servizi', 'schede_lavoro', 'blocchi'].any((c) => d.elenco(c, archiviati: true).any((r) => r['demo'] == true));
+bool ciSonoDatiDemo(Dati d) => ['clienti', 'appuntamenti', 'servizi', 'schede_lavoro', 'blocchi', 'prodotti', 'fornitori', 'ordini_fornitore', 'appunti'].any((c) => d.elenco(c, archiviati: true).any((r) => r['demo'] == true));
 
 /// Dati di prova, tutti segnati `demo: true` (stessa logica della web app).
 Future<void> caricaDatiDemo(Dati d, {bool configura = false}) async {
@@ -132,12 +133,69 @@ Future<void> caricaDatiDemo(Dati d, {bool configura = false}) async {
     await d.salvaMolti('schede_lavoro', schede);
     final kb = D.aggiungiGiorniKey(oggi, 3);
     await d.salva('blocchi', {'tipo': 'personale', 'titolo': 'Impegno di prova', 'inizio': isoJs(D.combina(kb, '16:00')), 'fine': isoJs(D.combina(kb, '17:00')), 'tuttoIlGiorno': false, 'ricorrenza': null, 'operatriceId': null, 'demo': true, 'archiviato': false});
+
+    // Magazzino, fornitori, ordini e appunti di prova (come la web app)
+    final fornitori = <Doc>[
+      {...fornitoreVuoto(), 'ragioneSociale': 'Fornitore di prova Uno', 'referente': 'Referente prova', 'telefono': '+390600000001', 'email': 'ordini@esempio.invalid', 'tempiConsegna': '2–3 giorni lavorativi', 'minimoOrdineCent': 5000, 'speseSpedizioneCent': 690, 'demo': true},
+      {...fornitoreVuoto(), 'ragioneSociale': 'Fornitore di prova Due', 'telefono': '+393330000099', 'tempiConsegna': '24 ore', 'demo': true},
+    ];
+    await d.salvaMolti('fornitori', fornitori);
+    String scad(int g) => D.aggiungiGiorniKey(oggi, g);
+    final base = [
+      ('Gel costruttore rosa (prova)', 'Gel costruttore', 'ml', 3, 1890, 0, 30, '', null, 25),
+      ('Base coat (prova)', 'Base', 'ml', 2, 990, 0, 15, '', 12, 14),
+      ('Top coat lucido (prova)', 'Top', 'ml', 2, 1090, 0, 15, scad(20), 12, 12),
+      ('Semipermanente rosso 012 (prova)', 'Semipermanente', 'ml', 1, 790, 1490, 8, '', 12, 3),
+      ('Lime 100/180 (prova)', 'Lime e abrasivi', 'pz', 20, 45, 0, 100, '', null, 12),
+      ('Olio cuticole (prova)', 'Cosmetici in vendita', 'pz', 3, 350, 900, 6, scad(200), 6, 2),
+    ];
+    final prodotti = <Doc>[];
+    final movimenti = <Doc>[];
+    for (var i = 0; i < base.length; i++) {
+      final b = base[i];
+      final p = {
+        ...prodottoVuoto(), 'id': uid(), 'nome': b.$1, 'marca': 'Marca di prova', 'categoria': b.$2, 'unita': b.$3, 'scortaMinima': b.$4, 'costoCent': b.$5,
+        'prezzoVenditaCent': b.$6 == 0 ? null : b.$6, 'uso': b.$6 == 0 ? 'interno' : 'entrambi', 'fornitoreId': fornitori[i % 2]['id'], 'codiceFornitore': 'PROVA-${100 + i}',
+        'lotto': 'L2026${D.p2(i + 1)}', 'scadenza': b.$8, 'paoMesi': b.$9, 'dataApertura': b.$9 != null ? scad(i == 1 ? -400 : -40) : '', 'demo': true,
+      };
+      prodotti.add(p);
+      movimenti.add(nuovoMovimento(prodottoId: comeStr(p['id']), tipo: 'carico', quantita: b.$7, nota: 'Giacenza iniziale di prova', costoCent: b.$5, data: isoJs(D.combina(scad(-40), '09:00')), demo: true));
+      movimenti.add(nuovoMovimento(prodottoId: comeStr(p['id']), tipo: 'consumo', quantita: b.$10, nota: 'Consumi di prova', data: isoJs(D.combina(scad(-5), '18:00')), demo: true));
+    }
+    movimenti.add(nuovoMovimento(prodottoId: comeStr(prodotti[5]['id']), tipo: 'vendita', quantita: 1, nota: 'Contanti', importoCent: 900, demo: true));
+    await d.salvaMolti('prodotti', prodotti);
+    await d.salvaMolti('movimenti_magazzino', movimenti);
+    await d.salva('ordini_fornitore', {
+      ...nuovoOrdine(fornitoreId: comeStr(fornitori[0]['id']), righe: [{...rigaOrdineDa(prodotti[2], quantita: 3), 'codiceFornitore': 'PROVA-102'}]),
+      'stato': 'inviato', 'dataCreazione': isoJs(D.combina(scad(-2), '10:00')), 'dataInvio': isoJs(D.combina(scad(-2), '10:05')), 'speseSpedizioneCent': 690, 'demo': true,
+    });
+    // il refill consuma di default un po' di gel costruttore e di top
+    final refill = servizi.where((x) => norm(comeStr(x['nome'])).contains('refill') || norm(comeStr(x['nome'])).contains('ricostruzione')).toList();
+    for (final s in refill) {
+      if (comeListaDoc(s['prodottoDefault']).isEmpty && s['demo'] == true) {
+        s['prodottiDefault'] = [{'prodottoId': prodotti[0]['id'], 'quantita': 2}, {'prodottoId': prodotti[2]['id'], 'quantita': 0.5}];
+        await d.salva('servizi', s);
+      }
+    }
+    await d.salvaMolti('appunti', [
+      {'titolo': 'Appunto di prova', 'testo': 'Questo è un appunto finto: si cancella con "Rimuovi dati di prova".', 'tag': ['prova'], 'fissato': true, 'colore': 'giallo', 'promemoria': '', 'fatto': false, 'collegamento': null, 'demo': true, 'archiviato': false},
+      {'titolo': 'Richiamare il fornitore (prova)', 'testo': 'Chiedere i tempi del prossimo ordine.', 'tag': ['ordini'], 'fissato': false, 'colore': 'azzurro', 'promemoria': oggi, 'fatto': false, 'collegamento': {'tipo': 'fornitore', 'id': fornitori[0]['id']}, 'demo': true, 'archiviato': false},
+      {'titolo': 'Preferenze (prova)', 'testo': "Le piace il glitter sull'anulare.", 'tag': <String>[], 'fissato': false, 'colore': 'rosa', 'promemoria': '', 'fatto': false, 'collegamento': {'tipo': 'cliente', 'id': clienti[0]['id']}, 'demo': true, 'archiviato': false},
+    ]);
   });
 }
 
 Future<void> rimuoviDatiDemo(Dati d) async {
-  final cliDemo = d.elenco('clienti', archiviati: true).where((c) => c['demo'] == true).map((c) => c['id']).toSet();
-  bool via(Doc r) => r['demo'] == true || (r['clienteId'] != null && cliDemo.contains(r['clienteId']));
+  Set<dynamic> demo(String c) => d.elenco(c, archiviati: true).where((x) => x['demo'] == true).map((x) => x['id']).toSet();
+  final cliDemo = demo('clienti'), prodDemo = demo('prodotti'), fornDemo = demo('fornitori');
+  bool via(Doc r) {
+    final col = comeDoc(r['collegamento'])['id'];
+    return r['demo'] == true ||
+        (r['clienteId'] != null && cliDemo.contains(r['clienteId'])) ||
+        (r['prodottoId'] != null && prodDemo.contains(r['prodottoId'])) ||
+        (r['fornitoreId'] != null && fornDemo.contains(r['fornitoreId'])) ||
+        (col != null && (cliDemo.contains(col) || prodDemo.contains(col) || fornDemo.contains(col)));
+  }
   await d.inBlocco(() async {
     for (final c in ['clienti', 'appuntamenti', 'schede_lavoro', 'foto', 'blocchi', 'servizi', 'prodotti', 'movimenti_magazzino', 'fornitori', 'ordini_fornitore', 'appunti']) {
       final ids = d.elenco(c, archiviati: true).where(via).map((r) => comeStr(r['id'])).toList();

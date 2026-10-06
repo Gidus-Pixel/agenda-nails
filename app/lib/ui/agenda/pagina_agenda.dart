@@ -198,7 +198,7 @@ class _PaginaAgendaState extends State<PaginaAgenda> {
                 child: Riquadro(
                   tipo: 'avviso',
                   testo: 'Imposta gli orari di apertura per vedere chiusure e pause e ricevere gli avvisi "fuori orario".',
-                  azioni: [OutlinedButton(onPressed: () => navigazione.vai(3), child: const Text('Vai alle impostazioni'))],
+                  azioni: [OutlinedButton(onPressed: () => navigazione.vai('altro'), child: const Text('Vai alle impostazioni'))],
                 ),
               ),
             if (d.piuOperatrici)
@@ -387,7 +387,7 @@ class _Mese extends StatelessWidget {
                                         margin: const EdgeInsets.only(bottom: 2),
                                         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                                         decoration: BoxDecoration(color: Color(coloreApp(d, a)).withValues(alpha: 0.16), borderRadius: BorderRadius.circular(4)),
-                                        child: Text('${D.hhmm(inizioApp(a))} ${nomeCliente(d.get('clienti', comeStr(a['clienteId']))).isEmpty ? comeStr(a['clienteNome']) : nomeCliente(d.get('clienti', comeStr(a['clienteId'])))}', maxLines: 1, overflow: TextOverflow.clip, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                                        child: Text('${D.hhmm(inizioApp(a))} ${nomeClienteDi(d, a)}', maxLines: 1, overflow: TextOverflow.clip, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
                                       ),
                                     if (lista.length > 4) Text('+${lista.length - 4}', style: t.labelSmall),
                                   ]),
