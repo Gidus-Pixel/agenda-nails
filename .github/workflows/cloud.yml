@@ -28,13 +28,17 @@ jobs:
         with: { node-version: 22 }
 
       - name: Controllo dei segreti
+        id: segreti
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "::error::Mancano i segreti CLOUDFLARE_API_TOKEN e/o CLOUDFLARE_ACCOUNT_ID (vedi le istruzioni in cima a questo file)."
-            exit 1
+            echo "::notice::Cloud non ancora configurato: mancano i segreti CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID (istruzioni in cloud/README.md). Pubblicazione saltata."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Database D1 nell'UE (lo crea se non esiste)
+        if: steps.segreti.outputs.ok == 'true'
         run: |
           ID=$($WRANGLER d1 list --json | jq -r '.[] | select(.name=="agenda-cloud") | (.uuid // .id)' | head -n1)
           if [ -z "$ID" ]; then
@@ -45,12 +49,15 @@ jobs:
           sed -i "s/DA-COMPILARE-dopo-wrangler-d1-create/$ID/" wrangler.toml
 
       - name: Aggiorna la struttura del database
+        if: steps.segreti.outputs.ok == 'true'
         run: $WRANGLER d1 migrations apply agenda-cloud --remote
 
       - name: Pubblica il Worker
+        if: steps.segreti.outputs.ok == 'true'
         run: $WRANGLER deploy
 
       - name: Chiave amministratore
+        if: steps.segreti.outputs.ok == 'true'
         env: { ADMIN_TOKEN: '${{ secrets.ADMIN_TOKEN }}' }
         run: |
           if [ -n "$ADMIN_TOKEN" ]; then printf '%s' "$ADMIN_TOKEN" | $WRANGLER secret put ADMIN_TOKEN; else echo "::warning::Segreto ADMIN_TOKEN assente: la pagina admin non funzionerà finché non lo aggiungi."; fi
