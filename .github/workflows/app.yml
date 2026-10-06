@@ -1,6 +1,7 @@
 # App nativa (Flutter) per iOS e Android.
 # Ad ogni modifica in app/: analisi del codice, test, APK Android installabile, compilazione iOS,
 # anteprima web e foto delle schermate sul simulatore iPhone/iPad.
+# I log di ogni passo vanno nel ramo "ci-log", le schermate nel ramo "ci-schermate".
 name: App iOS e Android
 
 on:
@@ -16,80 +17,100 @@ concurrency:
   group: app-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  LOG: ${{ github.workspace }}/ci-log
+
 jobs:
   verifica:
     name: Analisi, test, Android, anteprima web
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: app } }
+    defaults: { run: { working-directory: app, shell: bash } }
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with: { channel: stable, cache: true }
-      - name: Versioni
-        run: flutter --version
+      - run: mkdir -p "$LOG" && flutter --version | tee "$LOG/00-versioni.txt"
 
       - name: Genera le cartelle iOS/Android se mancano
         run: |
+          set -o pipefail
           if [ ! -d android ] || [ ! -d ios ]; then
-            flutter create --org it.agendanails --project-name agenda_nails --platforms android,ios,web --description "Agenda per nail artist ed estetiste" .
+            flutter create --org it.agendanails --project-name agenda_nails --platforms android,ios,web --description "Agenda per nail artist ed estetiste" . 2>&1 | tee "$LOG/01-create.txt"
           fi
-          python3 tools/prepara_piattaforme.py
+          python3 tools/prepara_piattaforme.py 2>&1 | tee -a "$LOG/01-create.txt"
 
       - name: Dipendenze
-        run: flutter pub get
+        run: set -o pipefail; flutter pub get 2>&1 | tee "$LOG/02-pub.txt"
 
       - name: Salva nel repository i file generati
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add android ios web pubspec.lock .metadata 2>/dev/null || true
+          git add -A android ios web pubspec.lock .metadata .gitignore 2>/dev/null || true
           if ! git diff --cached --quiet; then
             git commit -m "App: file di piattaforma generati [skip ci]"
-            git pull --rebase origin main && git push origin HEAD:main
+            git push origin HEAD:main || echo "push non riuscito (non bloccante)"
           fi
 
       - name: Analisi del codice
-        run: flutter analyze --no-fatal-infos
+        run: set -o pipefail; flutter analyze --no-fatal-infos 2>&1 | tee "$LOG/03-analisi.txt"
 
       - name: Test
-        run: flutter test --reporter expanded
+        run: set -o pipefail; flutter test 2>&1 | tee "$LOG/04-test.txt"
 
       - name: Anteprima web
-        run: flutter build web --release --no-web-resources-cdn --base-href /
-      - uses: actions/upload-artifact@v4
-        with: { name: anteprima-web, path: app/build/web, retention-days: 14 }
+        run: set -o pipefail; flutter build web --release --no-web-resources-cdn --base-href / 2>&1 | tee "$LOG/05-web.txt"
 
       - name: APK Android
-        run: flutter build apk --release
-      - run: cp build/app/outputs/flutter-apk/app-release.apk build/agenda-android.apk
+        run: |
+          set -o pipefail
+          flutter build apk --release 2>&1 | tee "$LOG/06-apk.txt"
+          cp build/app/outputs/flutter-apk/app-release.apk build/agenda-android.apk
       - uses: actions/upload-artifact@v4
         with: { name: agenda-android, path: app/build/agenda-android.apk, retention-days: 30 }
+
+      - name: Pubblica anteprima web nel ramo "anteprima"
+        run: |
+          cd build/web
+          git init -q && git checkout -q -b anteprima
+          git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "anteprima ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" anteprima
+
+      - name: Log nel ramo "ci-log"
+        if: always()
+        working-directory: ${{ github.workspace }}
+        run: |
+          mkdir -p /tmp/log && cp -r ci-log/. /tmp/log/ 2>/dev/null || true
+          echo "${{ job.status }} ${GITHUB_SHA}" > /tmp/log/ESITO-verifica.txt
+          cd /tmp/log && git init -q && git checkout -q -b ci-log-verifica
+          git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "log ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" ci-log-verifica
 
   ios:
     name: iOS (compilazione e schermate sul simulatore)
     needs: verifica
     runs-on: macos-latest
-    defaults: { run: { working-directory: app } }
+    defaults: { run: { working-directory: app, shell: bash } }
     steps:
       - uses: actions/checkout@v4
         with: { ref: main }
       - uses: subosito/flutter-action@v2
         with: { channel: stable, cache: true }
-      - run: python3 tools/prepara_piattaforme.py && flutter pub get
+      - run: mkdir -p "$LOG" schermate && python3 tools/prepara_piattaforme.py && flutter pub get
 
       - name: Compilazione per iPhone (senza firma)
-        run: flutter build ios --release --no-codesign
+        run: set -o pipefail; flutter build ios --release --no-codesign 2>&1 | tee "$LOG/10-ios.txt"
 
       - name: Compilazione per il simulatore
-        run: flutter build ios --simulator --debug
+        run: set -o pipefail; flutter build ios --simulator --debug 2>&1 | tee "$LOG/11-simulatore.txt"
 
       - name: Schermate su iPhone e iPad
         run: |
           set -e
           APPDIR=build/ios/iphonesimulator/Runner.app
           BUNDLE=$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$APPDIR/Info.plist")
-          mkdir -p schermate
-          scegli() { xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; c=[x for r,l in d.items() if 'iOS' in r for x in l if x['name'].startswith('$1')]; print(c[-1]['udid'] if c else '')"; }
+          xcrun simctl list devices available > "$LOG/12-simulatori.txt"
+          scegli() { xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; c=[x for r,l in d.items() if 'iOS' in r for x in l if x['name'].startswith('$1') and 'mini' not in x['name']]; print(c[-1]['udid'] if c else '')"; }
           for MODELLO in "iPhone" "iPad"; do
             UDID=$(scegli "$MODELLO")
             [ -z "$UDID" ] && { echo "Nessun simulatore $MODELLO"; continue; }
@@ -97,14 +118,30 @@ jobs:
             xcrun simctl bootstatus "$UDID" -b
             xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 --wifiBars 3 || true
             xcrun simctl install "$UDID" "$APPDIR"
-            for SCHERMATA in oggi agenda agenda-settimana clienti cliente appuntamento impostazioni; do
+            for SCHERMATA in ${SCHERMATE:-oggi agenda agenda-settimana clienti cliente appuntamento impostazioni}; do
               xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
-              SIMCTL_CHILD_AGENDA_DEMO=1 SIMCTL_CHILD_AGENDA_SCHERMATA=$SCHERMATA xcrun simctl launch "$UDID" "$BUNDLE"
-              sleep 12
+              SIMCTL_CHILD_AGENDA_DEMO=1 SIMCTL_CHILD_AGENDA_SCHERMATA=$SCHERMATA xcrun simctl launch "$UDID" "$BUNDLE" >> "$LOG/13-avvio.txt" 2>&1
+              sleep 14
               xcrun simctl io "$UDID" screenshot "schermate/${MODELLO}-${SCHERMATA}.png"
             done
+            xcrun simctl spawn "$UDID" log show --last 3m --predicate 'process == "Runner"' --style compact > "$LOG/14-log-${MODELLO}.txt" 2>/dev/null || true
             xcrun simctl shutdown "$UDID" || true
           done
-      - uses: actions/upload-artifact@v4
+
+      - name: Schermate nel ramo "ci-schermate"
         if: always()
-        with: { name: schermate-ios, path: app/schermate, retention-days: 14 }
+        run: |
+          cd schermate 2>/dev/null || exit 0
+          git init -q && git checkout -q -b ci-schermate
+          git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "schermate ${GITHUB_SHA::7}" || exit 0
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" ci-schermate
+
+      - name: Log nel ramo "ci-log-ios"
+        if: always()
+        working-directory: ${{ github.workspace }}
+        run: |
+          mkdir -p /tmp/log && cp -r ci-log/. /tmp/log/ 2>/dev/null || true
+          echo "${{ job.status }} ${GITHUB_SHA}" > /tmp/log/ESITO-ios.txt
+          cd /tmp/log && git init -q && git checkout -q -b ci-log-ios
+          git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "log ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" ci-log-ios
