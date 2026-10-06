@@ -1,7 +1,8 @@
 # Agenda — app per iPhone, iPad e Android
 
 App nativa (Flutter) con le stesse funzioni della versione web: agenda con trascinamento,
-clienti e storico lavori con foto, impostazioni, backup e cloud cifrato.
+clienti e storico lavori con foto, magazzino (giacenze, scadenze, PAO), fornitori e ordini con
+carico automatico, appunti con promemoria, report con CSV, impostazioni, backup e cloud cifrato.
 I dati sono **compatibili con la versione web**: un backup fatto da una parte si ripristina dall'altra,
 e lo stesso cloud cifrato tiene allineati browser, iPhone, iPad e Android.
 
@@ -21,8 +22,9 @@ I log dei passaggi finiscono nei rami `ci-log-verifica` e `ci-log-ios`.
 
 ## Provarla
 
-- **Android**: scarica l'artefatto `agenda-android` dall'ultima corsa riuscita, copia l'APK sul
-  telefono e aprilo (bisogna consentire "installa app sconosciute").
+- **Android**: dal telefono apri la pagina Releases del repository → "Agenda per Android
+  (anteprima)" → `agenda-android.apk` e aprilo (bisogna consentire l'installazione da quella
+  fonte). Il file si aggiorna da solo a ogni modifica dell'app.
 - **iPhone / iPad**: Apple consente di installare app fuori dall'App Store solo tramite
   **TestFlight**, che richiede l'iscrizione all'Apple Developer Program (99 €/anno) a nome di chi
   pubblica l'app. Una volta attivo l'account si aggiungono a GitHub i segreti per la firma e il

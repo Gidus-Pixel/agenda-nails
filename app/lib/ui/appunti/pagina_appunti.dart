@@ -126,13 +126,14 @@ class CartaAppunto extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: S.s),
                 child: Wrap(spacing: 4, runSpacing: 4, children: [
-                  if (st != null) EtichettaTipo('⏰ ${st.$1}', st.$2) else if (comeStr(a['promemoria']).isNotEmpty && a['fatto'] == true) const EtichettaTipo('✓ fatto', 'ok'),
+                  if (st != null) EtichettaTipo(st.$1, st.$2, icona: Icons.alarm_rounded) else if (comeStr(a['promemoria']).isNotEmpty && a['fatto'] == true) const EtichettaTipo('fatto', 'ok', icona: Icons.check_rounded),
                   if (link != null)
                     ActionChip(
                       visualDensity: VisualDensity.compact,
                       backgroundColor: Colors.white.withValues(alpha: 0.55),
                       side: BorderSide.none,
-                      label: Text('🔗 ${tipiCollegamento[comeDoc(a['collegamento'])['tipo']]}: $link', style: const TextStyle(color: testo, fontSize: 12)),
+                      avatar: const Icon(Icons.link_rounded, size: 16, color: testo),
+                      label: Text('${tipiCollegamento[comeDoc(a['collegamento'])['tipo']]}: $link', style: const TextStyle(color: testo, fontSize: 12)),
                       onPressed: () => apriCollegamento(context, a['collegamento']),
                     ),
                   for (final tg in comeListaStr(a['tag'])) Text('#$tg  ', style: const TextStyle(color: testo, fontSize: 12, fontWeight: FontWeight.w600)),

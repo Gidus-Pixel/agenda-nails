@@ -392,8 +392,9 @@ String giornoRelativo(DateTime d) {
 
 /// Etichetta colorata per tipo: pericolo | avviso | ok | info.
 class EtichettaTipo extends StatelessWidget {
-  const EtichettaTipo(this.testo, this.tipo, {super.key});
+  const EtichettaTipo(this.testo, this.tipo, {super.key, this.icona});
   final String testo, tipo;
+  final IconData? icona;
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -403,7 +404,7 @@ class EtichettaTipo extends StatelessWidget {
       'ok' => const Color(0xFF1F7A55),
       _ => cs.onSurfaceVariant,
     };
-    return Etichetta(testo, colore: c);
+    return Etichetta(testo, colore: c, icona: icona);
   }
 }
 
