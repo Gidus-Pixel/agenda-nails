@@ -345,7 +345,7 @@ class _ModuloOrdineState extends State<_ModuloOrdine> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () async {
-                            if (await _salva() && mounted) Navigator.pop(context);
+                            if (await _salva() && mounted) Navigator.pop(this.context);
                           },
                           child: const Text('Salva bozza'),
                         ),
@@ -355,8 +355,8 @@ class _ModuloOrdineState extends State<_ModuloOrdine> {
                         child: FilledButton.icon(
                           onPressed: () async {
                             if (!await _salva(silenzioso: true) || !mounted) return;
-                            await apriInvioOrdine(context, _o);
-                            if (mounted) setState(() => _o = context.dati.get('ordini_fornitore', comeStr(_o['id'])) ?? _o);
+                            await apriInvioOrdine(this.context, _o);
+                            if (mounted) setState(() => _o = this.context.dati.get('ordini_fornitore', comeStr(_o['id'])) ?? _o);
                           },
                           icon: const Icon(Icons.send_rounded),
                           label: const Text('Invia…'),
@@ -372,8 +372,8 @@ class _ModuloOrdineState extends State<_ModuloOrdine> {
                               _leggi();
                               await context.dati.salva('ordini_fornitore', _o);
                               if (!mounted) return;
-                              await apriRicevimento(context, _o);
-                              if (mounted) setState(() => _o = context.dati.get('ordini_fornitore', comeStr(_o['id'])) ?? _o);
+                              await apriRicevimento(this.context, _o);
+                              if (mounted) setState(() => _o = this.context.dati.get('ordini_fornitore', comeStr(_o['id'])) ?? _o);
                             },
                             icon: const Icon(Icons.inventory_rounded),
                             label: const Text('Ricevi merce'),
@@ -385,7 +385,7 @@ class _ModuloOrdineState extends State<_ModuloOrdine> {
                             onPressed: () async {
                               _leggi();
                               await context.dati.salva('ordini_fornitore', _o);
-                              if (mounted) avviso(context, 'Note salvate');
+                              if (mounted) avviso(this.context, 'Note salvate');
                             },
                             child: const Text('Salva note'),
                           ),

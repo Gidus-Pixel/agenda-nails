@@ -172,7 +172,7 @@ Future<void> caricaDatiDemo(Dati d, {bool configura = false}) async {
     // il refill consuma di default un po' di gel costruttore e di top
     final refill = servizi.where((x) => norm(comeStr(x['nome'])).contains('refill') || norm(comeStr(x['nome'])).contains('ricostruzione')).toList();
     for (final s in refill) {
-      if (comeListaDoc(s['prodottoDefault']).isEmpty && s['demo'] == true) {
+      if (comeListaDoc(s['prodottiDefault']).isEmpty && s['demo'] == true) {
         s['prodottiDefault'] = [{'prodottoId': prodotti[0]['id'], 'quantita': 2}, {'prodottoId': prodotti[2]['id'], 'quantita': 0.5}];
         await d.salva('servizi', s);
       }

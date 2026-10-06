@@ -1,5 +1,6 @@
 import 'package:agenda_nails/core/date.dart';
 import 'package:agenda_nails/core/util.dart';
+import 'package:agenda_nails/dominio/agenda.dart';
 import 'package:agenda_nails/dominio/appunti.dart';
 import 'package:agenda_nails/dominio/demo.dart';
 import 'package:agenda_nails/dominio/magazzino.dart';
