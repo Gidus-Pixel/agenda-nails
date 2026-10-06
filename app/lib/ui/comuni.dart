@@ -313,9 +313,34 @@ class Tessera extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(valore, style: t.titleLarge?.copyWith(fontFeatures: const [FontFeature.tabularFigures()]))),
         const SizedBox(height: 2),
-        Text(etichetta, style: t.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+        Text(etichetta, maxLines: 2, overflow: TextOverflow.ellipsis, style: t.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
       ]),
     );
+  }
+}
+
+/// Griglia di tessere ad altezza naturale (niente altezze fisse: il testo grande non viene tagliato).
+class GrigliaTessere extends StatelessWidget {
+  const GrigliaTessere({super.key, required this.colonne, required this.children, this.spazio = S.s});
+  final int colonne;
+  final List<Widget> children;
+  final double spazio;
+  @override
+  Widget build(BuildContext context) {
+    final righe = <Widget>[];
+    for (var i = 0; i < children.length; i += colonne) {
+      final riga = children.sublist(i, (i + colonne).clamp(0, children.length));
+      righe.add(IntrinsicHeight(
+        child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          for (var j = 0; j < colonne; j++) ...[
+            if (j > 0) SizedBox(width: spazio),
+            Expanded(child: j < riga.length ? riga[j] : const SizedBox()),
+          ],
+        ]),
+      ));
+      if (i + colonne < children.length) righe.add(SizedBox(height: spazio));
+    }
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: righe);
   }
 }
 

@@ -66,13 +66,8 @@ class PaginaOggi extends StatelessWidget {
         ]);
 
         final colonnaLato = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: S.s,
-            mainAxisSpacing: S.s,
-            childAspectRatio: 2.1,
+          GrigliaTessere(
+            colonne: 2,
             children: [
               Tessera(valore: F.euro(incOggi), etichetta: 'incassato oggi'),
               Tessera(valore: F.euro(incSett), etichetta: 'questa settimana'),

@@ -98,13 +98,8 @@ class SchedaCliente extends StatelessWidget {
             Riquadro(titolo: 'Nota per la prossima volta', testo: comeStr(schede.first['noteProssimaVolta'])),
           ],
           const SizedBox(height: S.l),
-          GridView.count(
-            crossAxisCount: 4,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: S.s,
-            mainAxisSpacing: S.s,
-            childAspectRatio: eTablet(context) ? 1.9 : 0.82,
+          GrigliaTessere(
+            colonne: 4,
             children: [
               Tessera(valore: '${st.visite}', etichetta: 'visite'),
               Tessera(valore: F.euro(st.spesaCent).replaceAll(',00', ''), etichetta: 'spesa totale'),

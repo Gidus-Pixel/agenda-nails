@@ -12,14 +12,17 @@ Future<void> avvia(WidgetTester t, Size logica) async {
   t.view.devicePixelRatio = 2;
   t.view.physicalSize = logica * 2;
   addTearDown(t.view.reset);
+  navigazione.scheda = 0;
   final d = await datiDiProva();
   await caricaDatiDemo(d, configura: true);
   await t.pumpWidget(AppAgenda(dati: d, cloud: Cloud(d)));
   await t.pumpAndSettle();
 }
 
-Future<void> scheda(WidgetTester t, IconData icona) async {
-  await t.tap(find.byIcon(icona).first);
+/// Tocca una voce della barra di navigazione (in basso sul telefono, laterale su tablet).
+Future<void> scheda(WidgetTester t, String nome) async {
+  final barra = find.byWidgetPredicate((w) => w is NavigationBar || w is NavigationRail);
+  await t.tap(find.descendant(of: barra, matching: find.text(nome)));
   await t.pumpAndSettle();
 }
 
@@ -34,25 +37,25 @@ void main() {
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.textContaining('Buon'), findsWidgets);
 
-    await scheda(t, Icons.calendar_month_outlined);
+    await scheda(t, 'Agenda');
     expect(find.textContaining('Tocca uno spazio libero'), findsOneWidget);
     await t.tap(find.widgetWithText(FloatingActionButton, 'Appuntamento').last);
     await t.pumpAndSettle();
     expect(find.text('Nuovo appuntamento'), findsOneWidget);
     expect(find.text('Fissa appuntamento'), findsOneWidget);
-    await t.tap(find.byTooltip('Chiudi'));
+    t.state<NavigatorState>(find.byType(Navigator).first).pop();
     await t.pumpAndSettle();
 
-    await scheda(t, Icons.people_outline_rounded);
+    await scheda(t, 'Clienti');
     expect(find.textContaining('Prova'), findsWidgets);
-    await t.tap(find.text('Beatrice Prova'));
+    await t.tap(find.text('Beatrice Prova').first);
     await t.pumpAndSettle();
     expect(find.text('Storico lavori'), findsOneWidget);
     expect(find.textContaining('DATO DI PROVA'), findsOneWidget); // avvertenze in evidenza
-    await t.pageBack();
+    t.state<NavigatorState>(find.byType(Navigator).first).pop();
     await t.pumpAndSettle();
 
-    await scheda(t, Icons.tune_outlined);
+    await scheda(t, 'Altro');
     expect(find.text('Backup e cloud'), findsOneWidget);
     await t.tap(find.text('Backup e cloud'));
     await t.pumpAndSettle();
@@ -63,11 +66,11 @@ void main() {
   testWidgets('iPad: barra laterale, settimana, clienti affiancate', (t) async {
     await avvia(t, const Size(1180, 820));
     expect(find.byType(NavigationRail), findsOneWidget);
-    await scheda(t, Icons.calendar_month_outlined);
+    await scheda(t, 'Agenda');
     expect(find.text('Settimana'), findsWidgets);
-    await scheda(t, Icons.people_outline_rounded);
+    await scheda(t, 'Clienti');
     expect(find.textContaining('Scegli una cliente'), findsOneWidget);
-    await t.tap(find.text('Anna Prova'));
+    await t.tap(find.text('Anna Prova').first);
     await t.pumpAndSettle();
     expect(find.text('Storico lavori'), findsOneWidget);
     expect(t.takeException(), isNull);
