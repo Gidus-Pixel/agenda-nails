@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#B4646E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Agenda">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="icone/apple-touch-icon.png">
 <title>Agenda</title>
 <!--
   Agenda gestionale per Nail Artist / Estetista — FASE 1
@@ -41,6 +48,8 @@
   --radius: 14px;
   --ombra: 0 1px 2px rgba(0,0,0,.06), 0 4px 14px rgba(0,0,0,.05);
   --topbar-h: 56px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --topbar-tot: calc(var(--topbar-h) + var(--safe-top));
   --nav-h: 0px;
 }
 :root[data-tema="scuro"] {
@@ -62,6 +71,11 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
+/* tocco: niente zoom col doppio tocco, niente menu/lente di iOS sulla pressione lunga di elementi interattivi */
+html { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.btn, .chip, #nav a, .riga, .fc-event, .fc .fc-timegrid-slot-lane, .fc .fc-daygrid-day, .tastierino, .segmentato button { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+#barra-safari { position: relative; z-index: 25; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: calc(6px + var(--safe-top)) 16px 6px; background: var(--avviso-bg); color: var(--avviso); font-size: .9rem; font-weight: 600; }
+.passi-install { padding-left: 22px; } .passi-install li { margin: 6px 0; }
 body {
   font-family: var(--font);
   font-size: 16px;
@@ -86,10 +100,12 @@ p { margin: .4em 0; }
 /* ===================== LAYOUT ===================== */
 .topbar {
   position: sticky; top: 0; z-index: 20;
-  height: var(--topbar-h);
+  height: var(--topbar-tot);
   display: flex; align-items: center; gap: 12px;
   padding: 0 16px;
-  padding-top: env(safe-area-inset-top);
+  padding-top: var(--safe-top);
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
   background: var(--surface);
   border-bottom: 1px solid var(--bordo);
 }
@@ -116,7 +132,7 @@ p { margin: .4em 0; }
 main#app { padding: 16px; max-width: 1400px; margin: 0 auto; }
 
 @media (min-width: 900px) {
-  #nav { top: var(--topbar-h); left: 0; bottom: 0; width: 220px; flex-direction: column; gap: 4px; padding: 12px; border-right: 1px solid var(--bordo); }
+  #nav { top: var(--topbar-tot); left: 0; bottom: 0; width: 220px; flex-direction: column; gap: 4px; padding: 12px; border-right: 1px solid var(--bordo); }
   main#app { margin-left: 220px; padding: 20px 24px; }
 }
 @media (max-width: 899px) {
@@ -217,7 +233,7 @@ main#app { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .campo { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; min-width: 0; }
 .campo > label, .etichetta { font-weight: 600; font-size: .9rem; }
 .campo .aiuto { font-size: .8rem; color: var(--testo-2); }
-input[type=text], input[type=tel], input[type=email], input[type=search], input[type=number], input[type=date], input[type=time], input[type=password], select, textarea {
+input[type=text], input[type=tel], input[type=email], input[type=url], input[type=search], input[type=number], input[type=date], input[type=time], input[type=password], select, textarea {
   font: inherit; font-size: 16px; /* evita lo zoom automatico su iOS */
   min-height: 44px; padding: 8px 12px; width: 100%;
   border-radius: 10px; border: 1px solid var(--bordo);
@@ -262,7 +278,8 @@ dialog.modale::backdrop { background: rgba(20, 12, 14, .45); }
 .modale-corpo { padding: 14px 16px; overflow: auto; flex: 1; }
 .modale-piede { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--bordo); }
 @media (max-width: 600px) {
-  dialog.modale, dialog.modale.grande { width: 100vw; max-width: 100vw; max-height: 100dvh; height: 100dvh; border-radius: 0; margin: 0; }
+  /* --vv-h/--vv-top: area visibile sopra la tastiera (iPhone), aggiornate da JS */
+  dialog.modale, dialog.modale.grande { width: 100vw; max-width: 100vw; max-height: var(--vv-h, 100dvh); height: var(--vv-h, 100dvh); border-radius: 0; margin: 0; transform: translateY(var(--vv-top, 0px)); padding-top: var(--safe-top); }
   .modale-piede .btn { flex: 1; }
 }
 
@@ -274,8 +291,8 @@ dialog.modale::backdrop { background: rgba(20, 12, 14, .45); }
 .toast.errore { background: #7a1610; }
 
 /* Agenda */
-.agenda-wrap { display: flex; flex-direction: column; height: calc(100dvh - var(--topbar-h) - var(--nav-h) - 40px); min-height: 480px; }
-@media (max-width: 899px) { .agenda-wrap { height: calc(100dvh - var(--topbar-h) - var(--nav-h) - 24px - env(safe-area-inset-bottom)); } }
+.agenda-wrap { display: flex; flex-direction: column; height: calc(100dvh - var(--topbar-tot) - var(--nav-h) - 40px); min-height: 480px; }
+@media (max-width: 899px) { .agenda-wrap { height: calc(100dvh - var(--topbar-tot) - var(--nav-h) - 24px - env(safe-area-inset-bottom)); } }
 .agenda-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
 .agenda-barra .titolo-periodo { font-weight: 700; font-size: 1.05rem; flex: 1; min-width: 140px; text-transform: capitalize; }
 .segmentato { display: inline-flex; border: 1px solid var(--bordo); border-radius: 12px; overflow: hidden; }
@@ -339,6 +356,16 @@ details.card > summary::-webkit-details-marker { display: none; }
 details.card > summary { list-style: none; }
 details.card > summary h2 { margin: 0; }
 
+/* Indicatore cloud */
+#tb-cloud { position: relative; }
+#tb-cloud .cloud-punto { position: absolute; right: 8px; bottom: 8px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--surface); background: var(--testo-2); }
+#tb-cloud[data-stato="ok"] .cloud-punto { background: var(--ok); }
+#tb-cloud[data-stato="sync"] .cloud-punto { background: #2F6DB5; animation: pulsa 1s infinite alternate; }
+#tb-cloud[data-stato="offline"] .cloud-punto { background: #B26B00; }
+#tb-cloud[data-stato="errore"] .cloud-punto { background: var(--pericolo); }
+@keyframes pulsa { to { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { #tb-cloud[data-stato="sync"] .cloud-punto { animation: none; } }
+
 /* Appunti */
 .griglia-appunti { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); align-items: start; }
 .appunto { border-radius: 12px; padding: 12px 14px; border: 1px solid rgba(0,0,0,.08); box-shadow: var(--ombra); cursor: pointer; min-height: 64px; }
@@ -389,6 +416,10 @@ body.installabile .solo-installabile { display: inline-flex; }
   <div class="logo" id="tb-logo" aria-hidden="true"></div>
   <div class="nome-attivita" id="tb-nome"></div>
   <div class="spazio"></div>
+  <button class="btn btn-ghost btn-piccolo nascosto" id="tb-cloud" type="button" aria-label="Cloud" data-stato="spento">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a5 5 0 01-.6-9.96A6 6 0 0118 9a4.5 4.5 0 01-.5 9z"/></svg>
+    <span class="cloud-punto" aria-hidden="true"></span>
+  </button>
   <button class="btn btn-ghost btn-piccolo nascosto" id="tb-blocca" type="button" aria-label="Blocca l'agenda con il PIN" title="Blocca">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
   </button>
@@ -456,6 +487,7 @@ const CONFIG = {
   avvisi: { scadenzaGiorni: 30, backupGiorni: 7 },
   sicurezza: { bloccoDopoMinuti: 0 },
   backupAutomatico: false,       // backup giornaliero nella cartella scelta (Chrome/Edge su computer) // blocco automatico con PIN dopo N minuti di inattività (0 = mai)
+  cloud: { url: '' },             // indirizzo del servizio cloud (backup automatico e sincronizzazione), es. https://agenda-cloud.<account>.workers.dev
   installazione: '',             // facoltativo: nome breve per tenere separati i dati di più agende sullo stesso browser
   note: ''                       // Note particolari dell'installazione
 };
@@ -467,7 +499,7 @@ const IDB_NOME_BASE = 'agenda-nails';
 // Nome dell'archivio: con CONFIG.installazione valorizzato due agende sullo stesso browser non si mescolano
 const IDB_NOME = CONFIG.installazione ? `${IDB_NOME_BASE}-${String(CONFIG.installazione).toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : IDB_NOME_BASE;
 const IDB_VERSION = 1;           // versione della struttura IndexedDB (archivi/indici)
-const VERSIONE_APP = '1.0.0';
+const VERSIONE_APP = '1.1.0';
 const MODULI_DISPONIBILI = ['agenda', 'clienti', 'storico', 'magazzino', 'fornitori', 'ordini', 'appunti', 'report'];
 
 /* ===================== UTILITÀ ===================== */
@@ -684,7 +716,9 @@ function creaRepo(nome) {
     },
     async delete(id) {
       const tx = db.transaction(nome, 'readwrite'); tx.objectStore(nome).delete(id);
-      await fineTransazione(tx); emetti('dati', { archivio: nome });
+      await fineTransazione(tx);
+      if (nome !== 'meta' && typeof registraEliminazioni === 'function') await registraEliminazioni([[nome, id]]);
+      emetti('dati', { archivio: nome });
     },
     async query(indice, range) { return richiesta(st().index(indice).getAll(range)); },
     async count() { return richiesta(st().count()); },
@@ -694,6 +728,8 @@ function creaRepo(nome) {
 }
 const Repo = Object.fromEntries(Object.keys(ARCHIVI).map((n) => [n, creaRepo(n)]));
 
+// Dati che appartengono a QUESTO dispositivo: non finiscono nei backup né nei punti di ripristino
+const META_LOCALI = ['cloud', 'cartellaBackup', 'ultimoBackupAuto', 'persistenzaRichiesta', 'ultimoBackup'];
 async function leggiMeta(id, def = null) { const r = await Repo.meta.get(id); return r ? r.valore : def; }
 async function scriviMeta(id, valore) { await Repo.meta.put({ id, valore }); }
 
@@ -943,19 +979,21 @@ async function doppiaConferma(cosa) {
 }
 
 /* ===================== FILE: scaricamento, foto ===================== */
+// Su iPhone/iPad il file passa dal foglio "Condividi" (i download nelle app installate non funzionano)
 function scaricaFile(nomeFile, contenuto, tipo = 'application/json') {
   const blob = contenuto instanceof Blob ? contenuto : new Blob([contenuto], { type: tipo });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = nomeFile; a.rel = 'noopener';
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  if (usaCondivisionePerFile()) return offriFile(nomeFile, blob);
+  scaricaConLink(nomeFile, blob);
+  return Promise.resolve(true);
 }
 function leggiFileTesto(file) {
   return new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => ko(r.error); r.readAsText(file); });
 }
 function scegliFile(accept) {
   return new Promise((ok) => {
-    const i = document.createElement('input'); i.type = 'file'; i.accept = accept;
+    const i = document.createElement('input'); i.type = 'file';
+    // su iPhone/iPad un filtro con estensioni personalizzate (.agendabak) rende i file non selezionabili
+    if (!(eiOS() && !/^image\//.test(accept))) i.accept = accept;
     i.addEventListener('change', () => ok(i.files && i.files[0] ? i.files[0] : null));
     i.click();
   });
@@ -1894,7 +1932,7 @@ async function apriDettaglioAppuntamento(id) {
   corpo.innerHTML = `
     ${app.demo ? '<span class="badge badge-demo">DATI DI PROVA</span>' : ''}
     <p style="font-size:1.1rem;margin-top:0"><strong>${esc(F.giornoLungo(ini))}</strong><br>${F.intervallo(ini, fin)} · ${F.durata(D.minutiTra(ini, fin))}${piuOperatrici() ? ` · ${esc(nomeOperatrice(app.operatriceId))}` : ''}</p>
-    <p><span class="stato" style="background:${STATI[app.stato].colore}">${STATI[app.stato].nome}</span></p>
+    <p><span class="stato" style="background:${STATI[app.stato].colore}">${STATI[app.stato].nome}</span>${app.promemoriaInviatoIl ? ` <span class="badge badge-ok">💬 promemoria inviato ${esc(F.dataOra(new Date(app.promemoriaInviatoIl)))}</span>` : ''}</p>
     <div class="cliente-scelta" style="margin:10px 0">
       <div style="flex:1"><strong>${esc(cli ? nomeCliente(cli) : app.clienteNome || 'Cliente eliminata')}</strong><div class="piccolo">${esc(telefonoLeggibile(cli?.telefono || ''))}</div></div>
       ${cli && moduloAttivo('clienti') ? `<button type="button" class="btn btn-piccolo" data-az="scheda-cliente">Scheda cliente</button>` : ''}
@@ -1930,7 +1968,7 @@ async function apriDettaglioAppuntamento(id) {
     conferma: async () => { m.chiudi(); await cambiaStato(app, 'confermato'); },
     sposta: () => { m.chiudi(); apriSposta(app); },
     modifica: () => { m.chiudi(); apriModuloAppuntamento({ app }); },
-    wa: () => promemoriaWhatsApp(cli, app),
+    wa: async () => { promemoriaWhatsApp(cli, app); const a = await Repo.appuntamenti.get(app.id); if (a) { a.promemoriaInviatoIl = new Date().toISOString(); await Repo.appuntamenti.put(a); } },
     'apri-scheda': async () => { m.chiudi(); const s = await Repo.schede_lavoro.get(app.schedaId); if (s) apriSchedaLavoro({ scheda: s }); },
     noshow: async () => { m.chiudi(); await cambiaStato(app, 'non_presentata'); },
     annulla: async () => {
@@ -2321,7 +2359,7 @@ function rigaAppuntamento(a, cliente, { conData = false } = {}) {
     <span class="barra" style="background:${st.colore}"></span>
     <span class="ora">${D.hhmm(i)}</span>
     <span class="principale">
-      <span class="titolo">${conData ? esc(F.giornoLungo(i)) : esc(nome)}${cliente && haAvvertenze(cliente) ? ' ⚠️' : ''}${(a.accontoCent || 0) > 0 ? ' 💶' : ''}${a.demo ? ' <span class="badge badge-demo">PROVA</span>' : ''}</span>
+      <span class="titolo">${conData ? esc(F.giornoLungo(i)) : esc(nome)}${cliente && haAvvertenze(cliente) ? ' ⚠️' : ''}${(a.accontoCent || 0) > 0 ? ' 💶' : ''}${a.promemoriaInviatoIl ? ' <span title="Promemoria inviato" aria-label="Promemoria inviato">💬</span>' : ''}${a.demo ? ' <span class="badge badge-demo">PROVA</span>' : ''}</span>
       <div class="sotto">${F.intervallo(i, f)} · ${esc((a.servizi || []).map((s) => s.nome).join(' + ') || '—')}</div>
     </span>
     <span class="stato" style="background:${st.colore}">${st.nome}</span></button></li>`;
@@ -2614,7 +2652,8 @@ async function vistaOggi(el) {
   const vendita = (da, a) => movimenti.filter((m) => m.tipo === 'vendita').filter((m) => { const k = D.key(new Date(m.data)); return k >= da && k <= a; }).reduce((t, m) => t + (m.importoCent || 0), 0);
   const incOggi = incassoTra(visite, kOggi, kOggi) + vendita(kOggi, kOggi), incSett = incassoTra(visite, ls, ds) + vendita(ls, ds);
   const daIncassare = appOggi.filter((a) => ['prenotato', 'confermato'].includes(a.stato)).reduce((t, a) => t + Math.max(0, (a.prezzoTotaleCent || 0) - (a.accontoCent || 0)), 0);
-  const giorniBackup = ultimoBackup ? D.diffGiorni(D.key(new Date(ultimoBackup)), kOggi) : null;
+  const ultimoSalvataggio = [ultimoBackup, cloudAttivo() ? statoCloud.ultimaSync : null].filter(Boolean).sort().pop() || null;
+  const giorniBackup = ultimoSalvataggio ? D.diffGiorni(D.key(new Date(ultimoSalvataggio)), kOggi) : null;
   const backupVecchio = giorniBackup === null || giorniBackup > (Number(c.avvisi.backupGiorni) || 7);
   const autoPermesso = cartella && c.backupAutomatico ? (await cartella.queryPermission({ mode: 'readwrite' }).catch(() => 'denied')) : null;
   const fusoDispositivo = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -2639,7 +2678,7 @@ async function vistaOggi(el) {
     <div class="intestazione"><div><h1>${ciao}${c.attivita.titolare ? `, ${esc(c.attivita.titolare)}` : ''}</h1><div class="muted">${esc(F.giornoLungo(ora))}</div></div>
       <div class="gruppo-btn">${agenda ? `<button class="btn btn-primario" type="button" id="d-nuovo">${icona('piu')} Appuntamento</button>` : ''}${moduloAttivo('clienti') ? `<button class="btn" type="button" id="d-cliente">${icona('piu')} Cliente</button>` : ''}${appunti ? `<button class="btn" type="button" id="d-appunto">${icona('piu')} Appunto</button>` : ''}</div></div>
     ${fusoDispositivo && fusoDispositivo !== c.fusoOrario ? `<div class="box box-avviso"><strong>Fuso orario del dispositivo diverso</strong>Questo dispositivo è impostato su “${esc(fusoDispositivo)}” mentre l'agenda è pensata per “${esc(c.fusoOrario)}”. Gli orari vengono mostrati secondo l'ora del dispositivo: controlla data e ora nelle impostazioni del telefono/PC.</div>` : ''}
-    ${daConfigurare.length ? `<div class="box box-info"><strong>Primo avvio: completa la configurazione</strong>Mancano: ${esc(daConfigurare.join(', '))}. <div class="gruppo-btn" style="margin-top:8px"><a class="btn btn-primario btn-piccolo" href="#/impostazioni">Vai alle impostazioni</a><button type="button" class="btn btn-piccolo" id="d-cfg">Importa un file di configurazione</button>${!demo ? '<button type="button" class="btn btn-piccolo" id="d-demo">Carica dati di prova</button>' : ''}</div></div>` : ''}
+    ${daConfigurare.length ? `<div class="box box-info"><strong>Primo avvio: completa la configurazione</strong>Mancano: ${esc(daConfigurare.join(', '))}. <div class="gruppo-btn" style="margin-top:8px"><a class="btn btn-primario btn-piccolo" href="#/impostazioni">Vai alle impostazioni</a><button type="button" class="btn btn-piccolo" id="d-cfg">Importa un file di configurazione</button><button type="button" class="btn btn-piccolo" id="d-ripristina">Ho un backup: ripristinalo</button>${!demo ? '<button type="button" class="btn btn-piccolo" id="d-demo">Carica dati di prova</button>' : ''}</div></div>` : ''}
     ${demo ? `<div class="box box-avviso"><strong>🧪 Sono presenti dati di prova</strong>Gli elementi segnati “PROVA” sono finti. <button type="button" class="btn btn-piccolo" id="d-demo-via" style="margin-top:6px">Rimuovi dati di prova</button></div>` : ''}
     ${autoPermesso === 'prompt' ? `<div class="box box-info"><strong>Backup automatico in pausa</strong>Il browser chiede di nuovo il permesso per scrivere nella cartella dei backup. <button type="button" class="btn btn-piccolo" id="d-auto" style="margin-top:6px">Autorizza e salva ora</button></div>` : ''}
     ${backupVecchio ? `<div class="box box-avviso"><strong>${giorniBackup === null ? 'Non hai ancora fatto un backup' : `Ultimo backup: ${giorniBackup} giorni fa`}</strong>I dati sono salvati solo su questo dispositivo e in questo browser. Fai un backup e conservalo altrove (Drive, chiavetta, email a te stessa). <button type="button" class="btn btn-piccolo" id="d-backup" style="margin-top:6px">Fai il backup ora</button></div>` : ''}
@@ -2648,7 +2687,8 @@ async function vistaOggi(el) {
         <ul class="lista">${appOggi.map((a) => rigaAppuntamento(a, mappaC.get(a.clienteId) || { nome: a.clienteNome })).join('') || '<li class="vuoto">Nessun appuntamento oggi.</li>'}</ul></div>
       <div class="card"><div class="card-titolo"><h2>Domani · ${esc(F.giornoBreve(domani))}</h2></div>
         <ul class="lista">${appDomani.map((a) => rigaAppuntamento(a, mappaC.get(a.clienteId) || { nome: a.clienteNome })).join('') || '<li class="vuoto">Nessun appuntamento domani.</li>'}</ul>
-        ${appDomani.length && cfg().promemoriaWhatsApp ? '<p class="muted piccolo">Tocca un appuntamento per inviare il promemoria WhatsApp.</p>' : ''}</div>` : ''}
+        ${(() => { const daInviare = appDomani.filter((a) => ['prenotato', 'confermato'].includes(a.stato) && !a.promemoriaInviatoIl && mappaC.get(a.clienteId)?.telefono).length;
+          return cfg().promemoriaWhatsApp && appDomani.some((a) => ['prenotato', 'confermato'].includes(a.stato)) ? `<button type="button" class="btn ${daInviare ? 'btn-wa' : ''} btn-piccolo" id="d-coda" style="margin-top:8px">${icona('wa')} ${daInviare ? `Invia i promemoria (${daInviare})` : 'Promemoria inviati ✓'}</button>` : ''; })()}</div>` : ''}
       <div class="card"><div class="card-titolo"><h2>Incassi</h2>${moduloAttivo('report') ? '<a class="btn btn-piccolo" href="#/report">Report</a>' : ''}</div>
         <div class="statistiche">
           <div class="stat"><div class="val">${F.euro(incOggi)}</div><div class="lab">Incassato oggi</div></div>
@@ -2669,7 +2709,8 @@ async function vistaOggi(el) {
       <div class="card"><div class="card-titolo"><h2>Dati e backup</h2></div>
         <dl class="kv">
           <dt>Ultimo backup</dt><dd>${ultimoBackup ? esc(F.dataOra(new Date(ultimoBackup))) : 'mai'}</dd>
-          <dt>Backup automatico</dt><dd>${cartella && c.backupAutomatico ? (autoPermesso === 'granted' ? '<span class="badge badge-ok">attivo</span>' : '<span class="badge badge-avviso">in attesa di permesso</span>') : 'non attivo'}</dd>
+          <dt>Cloud</dt><dd>${cloudAttivo() ? `<span class="badge badge-ok">attivo</span> ${statoCloud.ultimaSync ? `· sincronizzato ${esc(F.dataOra(new Date(statoCloud.ultimaSync)))}` : ''}` : '<a href="#/impostazioni" data-vai-cloud>non attivo</a>'}</dd>
+          ${'showDirectoryPicker' in window && !eiOS() ? `<dt>Backup in cartella</dt><dd>${cartella && c.backupAutomatico ? (autoPermesso === 'granted' ? '<span class="badge badge-ok">attivo</span>' : '<span class="badge badge-avviso">in attesa di permesso</span>') : 'non attivo'}</dd>` : ''}
           <dt>Archiviazione</dt><dd>${persist.html}</dd>
           <dt>Blocco con PIN</dt><dd>${pin ? 'attivo' : 'non impostato'}</dd>
         </dl>
@@ -2679,10 +2720,12 @@ async function vistaOggi(el) {
   $$('[data-prodotto]', el).forEach((b) => b.addEventListener('click', () => apriProdotto(b.dataset.prodotto)));
   $$('[data-ordine]', el).forEach((b) => b.addEventListener('click', async () => apriOrdine({ ordine: await Repo.ordini_fornitore.get(b.dataset.ordine) })));
   $$('[data-appunto-d]', el).forEach((b) => b.addEventListener('click', () => apriAppunto({ appunto: promem.find((a) => a.id === b.dataset.appuntoD) })));
+  $('#d-coda', el)?.addEventListener('click', () => apriCodaPromemoria(domani).catch(erroreUI));
   $('#d-nuovo', el)?.addEventListener('click', () => apriModuloAppuntamento({}));
   $('#d-cliente', el)?.addEventListener('click', async () => { const cl = await apriModuloCliente({}); if (cl) vai(`#/cliente/${encodeURIComponent(cl.id)}`); });
   $('#d-appunto', el)?.addEventListener('click', () => apriAppunto({}));
   $('#d-cfg', el)?.addEventListener('click', () => importaConfigurazione().catch(erroreUI));
+  $('#d-ripristina', el)?.addEventListener('click', () => ripristinaDaFile().catch(erroreUI));
   $('#d-demo', el)?.addEventListener('click', () => caricaDatiDemo().catch(erroreUI));
   $('#d-demo-via', el)?.addEventListener('click', () => rimuoviDatiDemo().catch(erroreUI));
   $('#d-backup', el)?.addEventListener('click', () => apriBackup().catch(erroreUI));
@@ -2731,7 +2774,7 @@ async function ripristinaDaFile() {
     <dl class="kv"><dt>File</dt><dd>${esc(file.name)}</dd><dt>Creato il</dt><dd>${esc(F.dataOra(new Date(obj.esportatoIl)))}</dd><dt>Attività</dt><dd>${esc(obj.attivita || '—')}</dd><dt>Versione dati</dt><dd>${obj.schemaVersion}${obj.schemaVersion < SCHEMA_VERSION ? ' (verrà aggiornata automaticamente)' : ''}</dd></dl>
     <p><strong>Contenuto del backup:</strong></p><ul>${righe}</ul>
     ${obj.conFoto === false ? '<div class="box box-info piccolo"><strong>Backup senza foto</strong>Le foto già presenti su questo dispositivo verranno mantenute.</div>' : ''}
-    <div class="box box-pericolo"><strong>Attenzione</strong>Tutti i dati attuali di questo dispositivo (${attuali.clienti} clienti, ${attuali.appuntamenti} appuntamenti, impostazioni comprese) verranno SOSTITUITI dal contenuto del backup.</div>
+    <div class="box box-pericolo"><strong>Attenzione</strong>Tutti i dati attuali di questo dispositivo (${attuali.clienti} clienti, ${attuali.appuntamenti} appuntamenti, impostazioni comprese) verranno SOSTITUITI dal contenuto del backup.${cloudAttivo() ? ' <strong>Il cloud è attivo: anche il cloud e gli altri dispositivi collegati passeranno a questi dati.</strong>' : ''} Prima viene creato un punto di ripristino della situazione attuale.</div>
     <button type="button" class="btn" id="rip-prima">Scarica prima un backup dei dati attuali</button>
     <label class="check" style="margin-top:10px"><input type="checkbox" id="rip-ok"> Ho capito: i dati attuali verranno sostituiti</label>`;
   $('#rip-prima', corpo).addEventListener('click', () => eseguiBackup().catch(erroreUI));
@@ -2746,21 +2789,23 @@ async function ripristinaDaFile() {
   await m.promessa;
 }
 async function applicaBackup(obj) {
+  try { await creaCopiaRipristino('prima'); } catch (e) { console.warn('Punto di ripristino non creato', e); }
   const dati = clona(obj.dati); // copia (le foto sono stringhe base64)
   migraDati(dati, obj.schemaVersion);
   dati.foto = obj.conFoto === false
     ? await richiesta(db.transaction('foto').objectStore('foto').getAll()) // backup leggero: tengo le foto attuali
     : (obj.dati.foto || []).map((f) => { const { dataURL, ...resto } = f; return { ...resto, blob: dataURL ? dataURLABlobSync(dataURL) : null }; }).filter((f) => f.blob);
   // dati legati a questo dispositivo: non vengono presi dal backup
-  const locali = ['schemaVersion', 'ultimoBackup', 'cartellaBackup', 'ultimoBackupAuto', 'persistenzaRichiesta'];
-  dati.meta = (dati.meta || []).filter((m) => !locali.includes(m.id));
-  for (const id of ['cartellaBackup', 'ultimoBackupAuto', 'persistenzaRichiesta']) { const r = await Repo.meta.get(id); if (r) dati.meta.push(r); }
+  dati.meta = (dati.meta || []).filter((m) => !META_LOCALI.includes(m.id) && m.id !== 'schemaVersion' && !m.id.startsWith('elim:'));
+  for (const id of META_LOCALI) { if (id === 'ultimoBackup') continue; const r = await Repo.meta.get(id); if (r) dati.meta.push(r); }
   dati.meta.push({ id: 'schemaVersion', valore: SCHEMA_VERSION });
   const ultimo = await leggiMeta('ultimoBackup'); if (ultimo) dati.meta.push({ id: 'ultimoBackup', valore: ultimo });
   if (!dati.meta.some((m) => m.id === 'seedServizi')) dati.meta.push({ id: 'seedServizi', valore: true });
   await scriviTutto(dati);
   await caricaConfig();
   disegnaMenu(); aggiornaPulsanteBlocco();
+  await caricaStatoCloud();
+  if (cloudAttivo()) { try { await cloudSostituisciTutto(); } catch (e) { toast('Ripristino fatto, ma il cloud non è stato aggiornato: ' + e.message, { errore: true, durata: 9000 }); } }
   toast('Backup ripristinato correttamente.', { durata: 5000 });
   statoAgenda.vista = null;
   vai('#/oggi');
@@ -2902,6 +2947,7 @@ async function caricaDatiDemo() {
 }
 async function rimuoviDatiDemo() {
   if (!(await conferma({ titolo: 'Rimuovere i dati di prova?', messaggio: 'Verranno cancellati tutti gli elementi segnati “PROVA” e gli appuntamenti/schede collegati alle clienti di prova.', ok: 'Rimuovi', pericolo: true }))) return;
+  try { await creaCopiaRipristino('prima'); } catch (e) { console.warn(e); }
   const dati = await leggiTutto();
   const cliDemo = new Set(dati.clienti.filter((c) => c.demo).map((c) => c.id));
   const servDemo = new Set(dati.servizi.filter((s) => s.demo).map((s) => s.id));
@@ -2911,8 +2957,10 @@ async function rimuoviDatiDemo() {
     || (r.collegamento && [cliDemo, prodDemo, fornDemo].some((s) => s.has(r.collegamento.id)));
   const nomi = ['clienti', 'appuntamenti', 'schede_lavoro', 'foto', 'blocchi', 'servizi', 'prodotti', 'movimenti_magazzino', 'fornitori', 'ordini_fornitore', 'appunti'];
   const tx = db.transaction(nomi, 'readwrite');
-  for (const n of nomi) for (const r of dati[n]) if (via(r)) tx.objectStore(n).delete(r.id);
+  const eliminati = [];
+  for (const n of nomi) for (const r of dati[n]) if (via(r)) { tx.objectStore(n).delete(r.id); eliminati.push([n, r.id]); }
   await fineTransazione(tx);
+  await registraEliminazioni(eliminati);
   emetti('dati', { archivio: '*' });
   // segnala eventuali appuntamenti veri che usavano servizi di prova
   const orfani = dati.appuntamenti.filter((a) => !via(a) && (a.servizi || []).some((s) => servDemo.has(s.servizioId))).length;
@@ -3048,13 +3096,17 @@ async function vistaImpostazioni(el) {
         ${persist.ok === false ? '<button type="button" class="btn" id="i-persist">Richiedi archiviazione persistente</button>' : ''}
       </div>
       <p class="muted piccolo">Il backup è un unico file con tutti i dati (foto facoltative, password facoltativa). Conservalo fuori da questo dispositivo.</p>
-      ${'showDirectoryPicker' in window ? `<h3 style="margin-top:16px">Backup automatico</h3>
+      ${'showDirectoryPicker' in window && !eiOS() ? `<h3 style="margin-top:16px">Backup automatico in una cartella</h3>
       <p class="muted piccolo">Sul computer (Chrome/Edge) l'agenda può salvare da sola un backup al giorno in una cartella a tua scelta, per esempio una cartella sincronizzata con Google Drive, OneDrive o Dropbox. Tiene un file per ogni giorno della settimana: dopo 7 giorni il più vecchio viene sovrascritto.</p>
       <label class="check"><input type="checkbox" id="i-auto" ${c.backupAutomatico ? 'checked' : ''} ${cartella ? '' : 'disabled'}> Backup automatico giornaliero</label>
       <div class="gruppo-btn"><button type="button" class="btn btn-piccolo" id="i-cartella">${cartella ? `Cambia cartella (attuale: ${esc(cartella.name)})` : 'Scegli la cartella dei backup…'}</button></div>` : '<p class="muted piccolo">Su questo dispositivo il backup automatico in cartella non è disponibile (serve Chrome o Edge su computer): usa “Condividi” per mandare il backup su Drive o via email.</p>'}
       <h3 style="margin-top:16px">App</h3>
       <div class="gruppo-btn"><button type="button" class="btn" id="i-installa">Installa l'app su questo dispositivo</button></div>
       <p class="muted piccolo">${/^https?:$/.test(location.protocol) ? 'Installata, l\'agenda si apre come un\'app e funziona anche senza internet.' : 'Stai usando il file aperto dal dispositivo. Per installarla come app e usarla offline su tablet e telefono, aprila dall\'indirizzo https dove è pubblicata.'}</p>
+      <h3 style="margin-top:16px" id="cloud">Cloud: backup automatico e sincronizzazione</h3>
+      <div id="i-cloud"></div>
+      <h3 style="margin-top:16px">Punti di ripristino automatici</h3>
+      <div id="i-copie"></div>
       <h3 style="margin-top:16px">Configurazione</h3>
       <div class="gruppo-btn"><button type="button" class="btn" id="i-cfg-esp">Esporta configurazione</button><button type="button" class="btn" id="i-cfg-imp">Importa configurazione…</button></div>
       <p class="muted piccolo">Solo impostazioni e listino (niente clienti): serve per preparare l'agenda per un'altra estetista.</p>
@@ -3153,6 +3205,8 @@ async function vistaImpostazioni(el) {
   s('#i-demo-si').addEventListener('click', () => caricaDatiDemo().catch(erroreUI));
   s('#i-demo-no').addEventListener('click', () => rimuoviDatiDemo().catch(erroreUI));
   s('#i-arch-apri').addEventListener('click', () => mostraArchivio(s('#i-archivio')).catch(erroreUI));
+  sezioneCopie(s('#i-copie')).catch(erroreUI);
+  sezioneCloud(s('#i-cloud')).catch(erroreUI);
   s('#i-blocchi').addEventListener('click', () => apriElencoBlocchi().catch(erroreUI));
   s('#i-pin').addEventListener('click', () => apriGestionePin().catch(erroreUI));
   s('#i-installa').addEventListener('click', () => installaApp().catch(erroreUI));
@@ -3264,7 +3318,9 @@ async function eliminaClienteConAnonimizzazione(id) {
   for (const a of apps) tx.objectStore('appuntamenti').put(a);
   for (const s of schede) tx.objectStore('schede_lavoro').put(s);
   for (const f of foto) tx.objectStore('foto').delete(f.id);
-  await fineTransazione(tx); emetti('dati', { archivio: '*' });
+  await fineTransazione(tx);
+  await registraEliminazioni([['clienti', id], ...foto.map((f) => ['foto', f.id])]);
+  emetti('dati', { archivio: '*' });
 }
 
 </script>
@@ -4400,7 +4456,11 @@ async function creaBlobBackup({ conFoto = true } = {}) {
   const testa = { app: APP_ID, tipo: 'backup-completo', schemaVersion: SCHEMA_VERSION, versioneApp: VERSIONE_APP, esportatoIl: new Date().toISOString(), attivita: cfg().attivita.nome || '', conFoto };
   parti.push(JSON.stringify(testa).slice(0, -1) + ',"dati":{');
   const nomi = Object.keys(ARCHIVI).filter((n) => n !== 'foto');
-  for (const n of nomi) parti.push(`${JSON.stringify(n)}:${JSON.stringify(await richiesta(db.transaction(n).objectStore(n).getAll()))},`);
+  for (const n of nomi) {
+    let righe = await richiesta(db.transaction(n).objectStore(n).getAll());
+    if (n === 'meta') righe = righe.filter((m) => !META_LOCALI.includes(m.id) && !m.id.startsWith('elim:')); // token del cloud e dati del dispositivo restano fuori
+    parti.push(`${JSON.stringify(n)}:${JSON.stringify(righe)},`);
+  }
   parti.push('"foto":[');
   if (conFoto) {
     const foto = await richiesta(db.transaction('foto').objectStore('foto').getAll());
@@ -4435,9 +4495,9 @@ async function apriBackup() {
       <div class="campo"><label for="bk-p2">Ripeti password</label><input type="password" id="bk-p2" autocomplete="new-password"></div></div>
       <div class="box box-avviso piccolo"><strong>Se perdi la password il backup non si può più aprire.</strong>Nessuno, nemmeno chi ha creato l'app, può recuperarla.</div></div>` : ''}
     <div class="gruppo-btn" style="margin-top:12px">
-      <button type="button" class="btn btn-primario" data-dest="scarica">Scarica il file</button>
-      ${puoCondividere ? '<button type="button" class="btn" data-dest="condividi">Condividi (Drive, WhatsApp, email…)</button>' : ''}
-      ${'showDirectoryPicker' in window ? `<button type="button" class="btn" data-dest="cartella">${cartella ? 'Salva nella cartella di backup' : 'Scegli una cartella di backup…'}</button>` : ''}
+      <button type="button" class="btn btn-primario" data-dest="scarica">${usaCondivisionePerFile() ? 'Salva il backup (File, iCloud Drive…)' : 'Scarica il file'}</button>
+      ${puoCondividere && !usaCondivisionePerFile() ? '<button type="button" class="btn" data-dest="condividi">Condividi (Drive, WhatsApp, email…)</button>' : ''}
+      ${'showDirectoryPicker' in window && !eiOS() ? `<button type="button" class="btn" data-dest="cartella">${cartella ? 'Salva nella cartella di backup' : 'Scegli una cartella di backup…'}</button>` : ''}
     </div>`;
   const s = (q) => $(q, corpo);
   s('#bk-cifra')?.addEventListener('change', (e) => s('#bk-pw').classList.toggle('nascosto', !e.target.checked));
@@ -4455,7 +4515,14 @@ async function apriBackup() {
       let blob = await creaBlobBackup({ conFoto: s('#bk-foto').checked });
       if (cifra) blob = await cifraBlob(blob, password, { esportatoIl: new Date().toISOString(), attivita: cfg().attivita.nome || '' });
       const nome = nomeBackup(cifra);
-      if (b.dataset.dest === 'scarica') { scaricaFile(nome, blob); }
+      if (b.dataset.dest === 'scarica') {
+        m.chiudi();
+        const salvato = await scaricaFile(nome, blob);
+        if (salvato === false) return; // finestra chiusa senza salvare
+        await segnaBackupFatto(); toast('Backup pronto. Conservalo in un posto sicuro, fuori da questo dispositivo.', { durata: 6000 });
+        if (rottaCorrente.id !== 'agenda') aggiornaVista();
+        return;
+      }
       else if (b.dataset.dest === 'condividi') {
         try { await navigator.share({ files: [new File([blob], nome, { type: blob.type })], title: 'Backup agenda' }); }
         catch (e) { if (e.name === 'AbortError') { b.disabled = false; b.textContent = testo; return; } throw e; }
@@ -4568,6 +4635,7 @@ async function bloccaApp() {
 }
 function sbloccaApp() {
   bloccata = false; ultimaAttivita = Date.now();
+  setTimeout(() => guidaInstallazioneIOS().catch(erroreUI), 300);
   $('#blocco')?.remove(); document.body.classList.remove('bloccata');
   for (const sel of ['.topbar', '#nav', '#app', '#toasts']) $(sel)?.removeAttribute('inert');
 }
@@ -4626,9 +4694,8 @@ let eventoInstallazione = null; let aggiornamentoChiesto = false;
 function avviaPWA() {
   if (!/^https?:$/.test(location.protocol)) return;
   const link = document.createElement('link'); link.rel = 'manifest'; link.href = 'manifest.webmanifest'; document.head.appendChild(link);
-  const apple = document.createElement('link'); apple.rel = 'apple-touch-icon'; apple.href = 'icone/apple-touch-icon.png'; document.head.appendChild(apple);
   const ico = document.createElement('link'); ico.rel = 'icon'; ico.type = 'image/png'; ico.href = 'icone/favicon-32.png'; document.head.appendChild(ico);
-  const tema = document.createElement('meta'); tema.name = 'theme-color'; tema.content = cfg().brand.primario || '#B4646E'; document.head.appendChild(tema);
+  const tema = document.querySelector('meta[name="theme-color"]'); if (tema) tema.content = cfg().brand.primario || '#B4646E';
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); eventoInstallazione = e; document.body.classList.add('installabile'); });
   window.addEventListener('appinstalled', () => { eventoInstallazione = null; document.body.classList.remove('installabile'); toast('App installata. La trovi tra le app del dispositivo.'); });
   if (!('serviceWorker' in navigator)) return;
@@ -4678,6 +4745,710 @@ function spostaComeIlPrimo(lista, vecchioInizio, nuovoInizio, nuovaDurataMin) {
 <script>
 'use strict';
 /* =====================================================================================
+   iPHONE / iPAD
+   - Nelle app aggiunte alla schermata Home i download non funzionano (bug di WebKit):
+     i file si salvano con il foglio "Condividi" → "Salva su File" / iCloud Drive.
+   - Safari e l'app installata hanno archivi SEPARATI: si guida l'installazione prima
+     di inserire dati e il trasferimento con un file di backup.
+   ===================================================================================== */
+function eiOS() {
+  const ua = navigator.userAgent || '';
+  return /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+function eStandalone() {
+  return window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches;
+}
+function puoCondividereFile(file) {
+  try { return !!(navigator.canShare && navigator.share && navigator.canShare({ files: [file] })); } catch (e) { return false; }
+}
+function usaCondivisionePerFile() { return eiOS() && !!navigator.share; }
+
+/* Salvataggio in due passi: il file viene preparato prima, poi il tocco sul pulsante apre
+   subito il foglio Condividi (Safari lo consente solo durante un tocco dell'utente). */
+function offriFile(nomeFile, blob) {
+  let file = new File([blob], nomeFile, { type: blob.type || 'application/octet-stream' });
+  if (!puoCondividereFile(file)) file = new File([blob], nomeFile, { type: 'application/octet-stream' });
+  const kb = Math.max(1, Math.round(blob.size / 1024));
+  const corpo = document.createElement('div');
+  corpo.innerHTML = `
+    <p style="margin-top:0"><strong>${esc(nomeFile)}</strong> <span class="muted">(${kb >= 1024 ? (kb / 1024).toFixed(1).replace('.', ',') + ' MB' : kb + ' KB'})</span></p>
+    <p>Tocca il pulsante e scegli <strong>Salva su File</strong> (per esempio in iCloud Drive), oppure mandalo via WhatsApp o email.</p>
+    <button type="button" class="btn btn-primario btn-blocco" id="of-share">Salva o condividi il file</button>
+    ${!eStandalone() ? '<button type="button" class="btn btn-ghost btn-blocco" id="of-scarica" style="margin-top:8px">Scarica nella cartella Download</button>' : ''}`;
+  const m = apriModale({ titolo: 'File pronto', corpo, azioni: [{ testo: 'Chiudi' }] });
+  return new Promise((risolvi) => {
+    $('#of-share', corpo).addEventListener('click', async () => {
+      if (!puoCondividereFile(file)) { scaricaConLink(nomeFile, blob); m.chiudi(); risolvi(true); return; }
+      try { await navigator.share({ files: [file], title: nomeFile }); m.chiudi(); toast('File salvato o condiviso.'); risolvi(true); }
+      catch (e) { if (e.name !== 'AbortError') erroreUI(e); }
+    });
+    $('#of-scarica', corpo)?.addEventListener('click', () => { scaricaConLink(nomeFile, blob); m.chiudi(); risolvi(true); });
+    m.promessa.then(() => risolvi(false));
+  });
+}
+function scaricaConLink(nomeFile, blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = nomeFile; a.rel = 'noopener';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+/* ----- Guida all'installazione su iPhone/iPad ----- */
+const CHIAVE_PROVA_SAFARI = 'agenda-prova-safari';
+function istruzioniInstallazioneIOS() {
+  const ipad = /iPad/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const condividi = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-4px" aria-label="Condividi"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg>';
+  return `<ol class="passi-install">
+    <li>Tocca ${condividi} <strong>Condividi</strong> ${ipad ? 'in alto, accanto all\'indirizzo' : 'nella barra in basso'} (in Chrome: in alto a destra).</li>
+    <li>Scorri e scegli <strong>Aggiungi alla schermata Home</strong>.</li>
+    <li>Lascia attivo <strong>Apri come app web</strong> e tocca <strong>Aggiungi</strong>.</li>
+    <li>Chiudi Safari e apri l'agenda dall'icona sulla schermata Home.</li>
+  </ol>`;
+}
+async function guidaInstallazioneIOS() {
+  if (!eiOS() || eStandalone() || !/^https?:$/.test(location.protocol)) return;
+  let giaScelto = false; try { giaScelto = sessionStorage.getItem(CHIAVE_PROVA_SAFARI) === '1'; } catch (e) { /* storage non disponibile */ }
+  if (giaScelto) { mostraBarraProvaSafari(); return; }
+  const ciSonoDati = (await Repo.clienti.count()) + (await Repo.appuntamenti.count()) > 0;
+  const corpo = document.createElement('div');
+  corpo.innerHTML = `
+    <p style="margin-top:0"><strong>Prima di iniziare, installa l'agenda sulla schermata Home.</strong> Così si apre come un'app, funziona senza internet e iOS non cancella i dati.</p>
+    ${istruzioniInstallazioneIOS()}
+    <div class="box box-avviso piccolo"><strong>Importante</strong>I dati inseriti qui in Safari restano in Safari: l'app installata parte vuota.</div>
+    ${ciSonoDati ? `<div class="box box-info"><strong>Hai già inserito dei dati qui?</strong>Salvali in un file, poi nell'app installata scegli <em>Ripristina da un backup</em>.
+      <div style="margin-top:8px"><button type="button" class="btn btn-primario" id="gi-trasferisci">Salva i dati in un file</button></div></div>` : ''}`;
+  const m = apriModale({ titolo: 'Installa l\'agenda', corpo, chiudibile: false, azioni: [
+    { testo: 'Continua in Safari solo per provare', classe: 'btn-ghost', valore: 'prova' }
+  ] });
+  $('#gi-trasferisci', corpo)?.addEventListener('click', async () => {
+    const blob = await creaBlobBackup({ conFoto: true });
+    await offriFile(nomeBackup(false), blob);
+    await segnaBackupFatto();
+  });
+  const v = await m.promessa;
+  if (v === 'prova') { try { sessionStorage.setItem(CHIAVE_PROVA_SAFARI, '1'); } catch (e) { /* ignorato */ } mostraBarraProvaSafari(); }
+}
+function mostraBarraProvaSafari() {
+  if ($('#barra-safari')) return;
+  const b = document.createElement('div'); b.id = 'barra-safari'; b.setAttribute('role', 'status');
+  b.innerHTML = `<span>Stai usando l'agenda in Safari: i dati restano qui, non nell'app installata.</span> <button type="button" class="btn btn-piccolo">Come installarla</button>`;
+  $('button', b).addEventListener('click', () => apriModale({ titolo: 'Installa l\'agenda', corpo: istruzioniInstallazioneIOS(), azioni: [{ testo: 'Ok' }] }));
+  document.body.insertBefore(b, document.body.firstChild);
+}
+
+/* ----- Tastiera di iPhone: le finestre si accorciano per non finire sotto la tastiera ----- */
+function avviaAdattamentoTastiera() {
+  const vv = window.visualViewport; if (!vv) return;
+  const agg = () => {
+    const r = document.documentElement;
+    r.style.setProperty('--vv-h', `${Math.round(vv.height)}px`);
+    r.style.setProperty('--vv-top', `${Math.round(vv.offsetTop)}px`);
+  };
+  vv.addEventListener('resize', agg); vv.addEventListener('scroll', agg); agg();
+}
+</script>
+<script>
+'use strict';
+/* =====================================================================================
+   PUNTI DI RIPRISTINO AUTOMATICI
+   Una copia al giorno di tutti i dati (foto escluse: restano quelle presenti) in un
+   archivio separato sullo stesso dispositivo. Proteggono dagli errori (cancellazioni,
+   ripristini sbagliati), NON dalla perdita del dispositivo: per quello servono i backup.
+   ===================================================================================== */
+const COPIE_DB = `${IDB_NOME}-ripristino`;
+const MAX_COPIE = { giornaliera: 7, prima: 5, manuale: 5 };
+const MOTIVI_COPIA = { giornaliera: 'Automatica giornaliera', prima: 'Prima di un ripristino o di una pulizia', manuale: 'Creata a mano' };
+let dbCopie = null;
+function apriDBCopie() {
+  if (dbCopie) return Promise.resolve(dbCopie);
+  return new Promise((ok, ko) => {
+    const r = indexedDB.open(COPIE_DB, 1);
+    r.onupgradeneeded = () => { const s = r.result.createObjectStore('copie', { keyPath: 'id' }); s.createIndex('creata', 'creata'); };
+    r.onsuccess = () => { dbCopie = r.result; dbCopie.onversionchange = () => { dbCopie.close(); dbCopie = null; }; ok(dbCopie); };
+    r.onerror = () => ko(r.error);
+  });
+}
+async function elencoCopie() {
+  const d = await apriDBCopie();
+  // solo le informazioni, senza caricare i dati di ogni copia
+  const tutte = await richiesta(d.transaction('copie').objectStore('copie').getAll());
+  return tutte.map(({ dati, ...info }) => info).sort((a, b) => b.creata.localeCompare(a.creata));
+}
+async function creaCopiaRipristino(motivo = 'manuale') {
+  const tutto = await leggiTutto();
+  delete tutto.foto;
+  tutto.meta = tutto.meta.filter((m) => !META_LOCALI.includes(m.id) && !m.id.startsWith('elim:'));
+  const rec = {
+    id: uid(), creata: new Date().toISOString(), giorno: D.oggiKey(), motivo, schemaVersion: SCHEMA_VERSION,
+    conteggi: { clienti: tutto.clienti.length, appuntamenti: tutto.appuntamenti.length, schede: tutto.schede_lavoro.length, prodotti: tutto.prodotti.length, appunti: tutto.appunti.length },
+    dati: tutto
+  };
+  const d = await apriDBCopie();
+  const tx = d.transaction('copie', 'readwrite'); tx.objectStore('copie').put(rec); await fineTransazione(tx);
+  // tieni solo le più recenti per ogni motivo
+  const elenco = (await elencoCopie()).filter((c) => c.motivo === motivo);
+  const via = elenco.slice(MAX_COPIE[motivo] || 5);
+  if (via.length) { const t2 = d.transaction('copie', 'readwrite'); for (const c of via) t2.objectStore('copie').delete(c.id); await fineTransazione(t2); }
+  return rec;
+}
+async function copiaGiornaliera() {
+  const oggi = D.oggiKey();
+  if ((await elencoCopie()).some((c) => c.motivo === 'giornaliera' && c.giorno === oggi)) return false;
+  if (!((await Repo.clienti.count()) + (await Repo.appuntamenti.count()) + (await Repo.prodotti.count()))) return false; // archivio vuoto: niente da copiare
+  await creaCopiaRipristino('giornaliera');
+  return true;
+}
+async function ripristinaCopia(id) {
+  const d = await apriDBCopie();
+  const copia = await richiesta(d.transaction('copie').objectStore('copie').get(id));
+  if (!copia) { toast('Punto di ripristino non trovato.'); return; }
+  const ok = await conferma({ titolo: 'Tornare a questo punto di ripristino?', messaggio: `
+    <p><strong>${esc(F.dataOra(new Date(copia.creata)))}</strong> — ${esc(MOTIVI_COPIA[copia.motivo] || copia.motivo)}</p>
+    <p>${copia.conteggi.clienti} clienti · ${copia.conteggi.appuntamenti} appuntamenti · ${copia.conteggi.schede} schede · ${copia.conteggi.prodotti} prodotti · ${copia.conteggi.appunti} appunti</p>
+    <div class="box box-avviso piccolo"><strong>Le modifiche fatte dopo andranno perse.</strong>Prima di procedere viene creato in automatico un punto di ripristino della situazione attuale, così puoi tornare indietro. Le foto non cambiano.</div>`, ok: 'Ripristina' });
+  if (!ok) return;
+  await applicaBackup({ app: APP_ID, tipo: 'backup-completo', schemaVersion: copia.schemaVersion, conFoto: false, dati: copia.dati });
+}
+async function sezioneCopie(cont) {
+  const elenco = await elencoCopie();
+  cont.innerHTML = `
+    <p class="muted piccolo" style="margin-top:0">Ogni giorno l'agenda salva da sola una copia dei dati su questo dispositivo (ultime ${MAX_COPIE.giornaliera}). Serve a rimediare agli errori, per esempio una cancellazione sbagliata. Non sostituisce il backup: se il dispositivo si rompe o viene perso, anche queste copie si perdono. Le foto non sono incluse.</p>
+    <ul class="lista">${elenco.map((c) => `<li><div class="riga" style="cursor:default;flex-wrap:wrap"><span class="principale"><span class="titolo">${esc(F.dataOra(new Date(c.creata)))}</span>
+      <div class="sotto">${esc(MOTIVI_COPIA[c.motivo] || c.motivo)} · ${c.conteggi.clienti} clienti · ${c.conteggi.appuntamenti} appuntamenti · ${c.conteggi.prodotti} prodotti</div></span>
+      <button type="button" class="btn btn-piccolo" data-copia="${esc(c.id)}">Ripristina</button></div></li>`).join('') || '<li class="vuoto">Ancora nessun punto di ripristino.</li>'}</ul>
+    <button type="button" class="btn btn-piccolo" id="cp-crea" style="margin-top:8px">Crea un punto di ripristino adesso</button>`;
+  $$('[data-copia]', cont).forEach((b) => b.addEventListener('click', () => ripristinaCopia(b.dataset.copia).catch(erroreUI)));
+  $('#cp-crea', cont).addEventListener('click', async () => { await creaCopiaRipristino('manuale'); toast('Punto di ripristino creato'); sezioneCopie(cont); });
+}
+function avviaCopieAutomatiche() {
+  const giro = () => copiaGiornaliera().catch((e) => console.warn('Punto di ripristino non creato', e));
+  setTimeout(giro, 8000); setInterval(giro, 60 * 60 * 1000);
+}
+
+/* =====================================================================================
+   PROMEMORIA WHATSAPP IN SEQUENZA (es. tutte le clienti di domani, una dopo l'altra)
+   WhatsApp si apre con il messaggio già scritto: l'invio lo fa l'estetista.
+   ===================================================================================== */
+async function apriCodaPromemoria(giorno) {
+  const inizio = D.inizioGiorno(giorno), fine = D.aggiungiGiorni(inizio, 1);
+  const mc = await mappaClienti();
+  const lista = (await appuntamentiTra(inizio, fine)).filter((a) => ['prenotato', 'confermato'].includes(a.stato)).sort((a, b) => a.inizio.localeCompare(b.inizio));
+  const corpo = document.createElement('div');
+  const disegna = () => {
+    const prossimo = lista.find((a) => !a.promemoriaInviatoIl && mc.get(a.clienteId)?.telefono);
+    const inviati = lista.filter((a) => a.promemoriaInviatoIl).length;
+    corpo.innerHTML = `
+      <p style="margin-top:0">${esc(F.giornoLungo(inizio))} · ${inviati} su ${lista.length} inviati</p>
+      ${prossimo ? `<button type="button" class="btn btn-wa btn-blocco" id="cq-prossimo" style="min-height:56px;font-size:1.05rem">${icona('wa')} Invia a ${esc(nomeCliente(mc.get(prossimo.clienteId)))} (${D.hhmm(new Date(prossimo.inizio))})</button>
+        <p class="muted piccolo">Si apre WhatsApp con il messaggio pronto: premi invia, poi torna qui per la cliente successiva.</p>` : `<div class="box box-ok"><strong>Fatto</strong>Tutti i promemoria possibili sono stati aperti.</div>`}
+      <ul class="lista">${lista.map((a) => { const c = mc.get(a.clienteId); return `<li><div class="riga" style="cursor:default">
+        <span class="ora">${D.hhmm(new Date(a.inizio))}</span>
+        <span class="principale"><span class="titolo">${esc(nomeCliente(c) || a.clienteNome)}</span><div class="sotto">${c?.telefono ? esc(telefonoLeggibile(c.telefono)) : 'nessun telefono'}</div></span>
+        ${a.promemoriaInviatoIl ? `<span class="badge badge-ok">✓ ${esc(D.hhmm(new Date(a.promemoriaInviatoIl)))}</span> <button type="button" class="btn btn-piccolo btn-ghost" data-rimanda="${esc(a.id)}">Di nuovo</button>` : (c?.telefono ? `<button type="button" class="btn btn-piccolo" data-invia="${esc(a.id)}">Invia</button>` : '')}
+      </div></li>`; }).join('') || '<li class="vuoto">Nessun appuntamento da ricordare.</li>'}</ul>`;
+    $('#cq-prossimo', corpo)?.addEventListener('click', () => invia(prossimo));
+    $$('[data-invia]', corpo).forEach((b) => b.addEventListener('click', () => invia(lista.find((x) => x.id === b.dataset.invia))));
+    $$('[data-rimanda]', corpo).forEach((b) => b.addEventListener('click', () => invia(lista.find((x) => x.id === b.dataset.rimanda))));
+  };
+  const invia = async (a) => {
+    const c = mc.get(a.clienteId);
+    promemoriaWhatsApp(c, a); // si apre durante il tocco (richiesto da iOS)
+    a.promemoriaInviatoIl = new Date().toISOString();
+    const rec = await Repo.appuntamenti.get(a.id); if (rec) { rec.promemoriaInviatoIl = a.promemoriaInviatoIl; await Repo.appuntamenti.put(rec); }
+    disegna();
+  };
+  disegna();
+  await apriModale({ titolo: 'Promemoria WhatsApp', corpo, azioni: [{ testo: 'Chiudi' }] }).promessa;
+  aggiornaVista();
+}
+</script>
+<script>
+'use strict';
+/* =====================================================================================
+   CLOUD CIFRATO — backup automatico e sincronizzazione tra dispositivi (iPad, iPhone, PC)
+   - Ogni record viene cifrato SUL DISPOSITIVO (AES-GCM 256) con una chiave ricavata dalla
+     password dell'estetista (PBKDF2-SHA256). Il server riceve solo blocchi illeggibili.
+   - Anche il "nome" dei record è nascosto: si usa un HMAC di archivio+id.
+   - Regola sui conflitti: vince la modifica più recente (updatedAt).
+   - Lo stato del cloud (token, chiave) resta su questo dispositivo: non va nei backup.
+   ===================================================================================== */
+const CLOUD_ARCHIVI = Object.keys(ARCHIVI).filter((n) => n !== 'meta');
+const CLOUD_ITERAZIONI = 310000;
+const CLOUD_TESTO_VERIFICA = 'agenda-nails:password-ok';
+const CLOUD_MAX_BYTE_RICHIESTA = 4 * 1024 * 1024;
+let statoCloud = null;            // copia in memoria di meta 'cloud'
+let chiaviCloud = null;           // { aes: CryptoKey, hmac: CryptoKey }
+let syncInCorso = null;
+let ultimoEsitoCloud = { stato: 'spento', testo: '' };
+let ignoraEventoDati = false;
+let timerSync = null;
+
+const cloudAttivo = () => !!(statoCloud && statoCloud.token && statoCloud.chiave && statoCloud.attivo);
+const urlCloud = () => String((statoCloud && statoCloud.url) || cfg().cloud?.url || '').replace(/\/+$/, '');
+
+/* ---------- chiavi e cifratura ---------- */
+async function derivaChiaviCloud(password, saleB64) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: b64InBuf(saleB64), iterations: CLOUD_ITERAZIONI, hash: 'SHA-256' }, base, 512));
+  return { aesRaw: bits.slice(0, 32), hmacRaw: bits.slice(32) };
+}
+async function importaChiaviCloud(aesRaw, hmacRaw) {
+  return {
+    aes: await crypto.subtle.importKey('raw', aesRaw, 'AES-GCM', false, ['encrypt', 'decrypt']),
+    hmac: await crypto.subtle.importKey('raw', hmacRaw, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+  };
+}
+async function cifraBytes(chiavi, bytes) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, chiavi.aes, bytes));
+  const out = new Uint8Array(12 + ct.length); out.set(iv); out.set(ct, 12); return out;
+}
+async function decifraBytes(chiavi, bytes) {
+  return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes.subarray(0, 12) }, chiavi.aes, bytes.subarray(12)));
+}
+async function creaVerificatore(chiavi) { return bufInB64(await cifraBytes(chiavi, new TextEncoder().encode(CLOUD_TESTO_VERIFICA))); }
+async function controllaVerificatore(chiavi, ver) {
+  try { return new TextDecoder().decode(await decifraBytes(chiavi, b64InBuf(ver))) === CLOUD_TESTO_VERIFICA; } catch (e) { return false; }
+}
+async function chiaveRecord(chiavi, archivio, id) {
+  const firma = new Uint8Array(await crypto.subtle.sign('HMAC', chiavi.hmac, new TextEncoder().encode(`${archivio}\u0000${id}`)));
+  return bufInB64(firma).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+// Formato in chiaro: [1 byte versione][4 byte lunghezza JSON][JSON][eventuali byte della foto]
+async function impacchetta(oggetto, blob) {
+  const j = new TextEncoder().encode(JSON.stringify(oggetto));
+  const bin = blob ? new Uint8Array(await blob.arrayBuffer()) : new Uint8Array(0);
+  const out = new Uint8Array(5 + j.length + bin.length);
+  out[0] = 1; new DataView(out.buffer).setUint32(1, j.length); out.set(j, 5); out.set(bin, 5 + j.length);
+  return out;
+}
+function spacchetta(bytes) {
+  if (bytes[0] !== 1) throw new Error('Formato cloud non riconosciuto');
+  const n = new DataView(bytes.buffer, bytes.byteOffset).getUint32(1);
+  const oggetto = JSON.parse(new TextDecoder().decode(bytes.subarray(5, 5 + n)));
+  const resto = bytes.subarray(5 + n);
+  return { oggetto, binario: resto.length ? resto : null };
+}
+
+/* ---------- stato locale ---------- */
+async function caricaStatoCloud() {
+  statoCloud = await leggiMeta('cloud', null);
+  chiaviCloud = null;
+  if (statoCloud && statoCloud.chiave && statoCloud.hmac) chiaviCloud = await importaChiaviCloud(b64InBuf(statoCloud.chiave), b64InBuf(statoCloud.hmac));
+}
+async function salvaStatoCloud(modifiche) {
+  statoCloud = { ...(statoCloud || {}), ...modifiche };
+  await scriviMeta('cloud', statoCloud);
+}
+
+/* ---------- chiamate al server ---------- */
+async function chiamaCloud(percorso, { metodo = 'GET', corpo = null, autenticato = true, url = null } = {}) {
+  const base = (url || urlCloud()).replace(/\/+$/, '');
+  if (!base) throw Object.assign(new Error('Indirizzo del servizio cloud non impostato.'), { codice: 'url' });
+  const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 45000);
+  let r;
+  try {
+    r = await fetch(base + percorso, {
+      method: metodo, signal: ctrl.signal, cache: 'no-store',
+      headers: { ...(corpo ? { 'Content-Type': 'application/json' } : {}), ...(autenticato && statoCloud?.token ? { Authorization: `Bearer ${statoCloud.token}` } : {}) },
+      body: corpo ? JSON.stringify(corpo) : undefined
+    });
+  } catch (e) { throw Object.assign(new Error('Cloud non raggiungibile (sei offline?)'), { codice: 'rete' }); }
+  finally { clearTimeout(t); }
+  let dati = {}; try { dati = await r.json(); } catch (e) { /* risposta vuota */ }
+  if (!r.ok) throw Object.assign(new Error(dati.messaggio || `Errore del cloud (${r.status})`), { codice: dati.errore || String(r.status), stato: r.status });
+  return dati;
+}
+
+/* ---------- eliminazioni definitive (servono agli altri dispositivi) ---------- */
+async function registraEliminazioni(coppie) {
+  if (!cloudAttivo() || !coppie.length) return;
+  const quando = new Date().toISOString();
+  await Repo.meta.putMany(coppie.filter(([a]) => CLOUD_ARCHIVI.includes(a)).map(([archivio, id]) => ({ id: `elim:${archivio}:${id}`, valore: { archivio, recordId: id, quando } })));
+}
+
+/* ---------- invio ---------- */
+async function raccogliModifiche({ tutto = false } = {}) {
+  const dopo = tutto ? '' : (statoCloud.ultimoPush || '');
+  const out = [];
+  for (const archivio of CLOUD_ARCHIVI) {
+    const tutti = await richiesta(db.transaction(archivio).objectStore(archivio).getAll());
+    for (const r of tutti) if (!dopo || !r.updatedAt || r.updatedAt > dopo) out.push({ archivio, record: r });
+  }
+  const elim = (await richiesta(db.transaction('meta').objectStore('meta').getAll())).filter((m) => m.id.startsWith('elim:'));
+  return { record: out, eliminazioni: elim };
+}
+async function preparaRecord(archivio, record) {
+  let blob = null; let r = record;
+  if (archivio === 'foto' && record.blob instanceof Blob) { const { blob: b, ...resto } = record; blob = b; r = { ...resto, blobTipo: b.type || 'image/jpeg' }; }
+  const bytes = await cifraBytes(chiaviCloud, await impacchetta({ a: archivio, r }, blob));
+  return { k: await chiaveRecord(chiaviCloud, archivio, record.id), d: bufInB64(bytes), byte: bytes.length };
+}
+async function inviaModifiche({ tutto = false, avanzamento = null } = {}) {
+  const inizio = new Date().toISOString();
+  const { record, eliminazioni } = await raccogliModifiche({ tutto });
+  const voci = [...record.map((x) => ({ tipo: 'r', ...x })), ...eliminazioni.map((m) => ({ tipo: 'e', meta: m }))];
+  let lotto = []; let byte = 0; let inviati = 0;
+  const invia = async () => {
+    if (!lotto.length) return;
+    const r = await chiamaCloud('/v1/push', { metodo: 'POST', corpo: { generazione: statoCloud.generazione, record: lotto.map(({ k, d }) => ({ k, d })) } });
+    // se nessun altro dispositivo ha scritto nel frattempo, non serve riscaricare i propri record
+    if (r.seq - lotto.length === (statoCloud.ultimoSeq || 0)) await salvaStatoCloud({ ultimoSeq: r.seq });
+    inviati += lotto.length; if (avanzamento) avanzamento(inviati, voci.length);
+    lotto = []; byte = 0;
+  };
+  for (const v of voci) {
+    let p;
+    if (v.tipo === 'r') p = await preparaRecord(v.archivio, v.record);
+    else {
+      const { archivio, recordId, quando } = v.meta.valore;
+      const bytes = await cifraBytes(chiaviCloud, await impacchetta({ a: archivio, id: recordId, eliminato: true, quando }, null));
+      p = { k: await chiaveRecord(chiaviCloud, archivio, recordId), d: bufInB64(bytes), byte: bytes.length };
+    }
+    if (lotto.length && (byte + p.byte * 1.4 > CLOUD_MAX_BYTE_RICHIESTA || lotto.length >= 200)) await invia();
+    lotto.push(p); byte += p.byte * 1.4;
+  }
+  await invia();
+  if (eliminazioni.length) { const tx = db.transaction('meta', 'readwrite'); for (const m of eliminazioni) tx.objectStore('meta').delete(m.id); await fineTransazione(tx); }
+  await salvaStatoCloud({ ultimoPush: inizio });
+  return voci.length;
+}
+
+/* ---------- ricezione ---------- */
+async function applicaRicevuti(voci) {
+  if (!voci.length) return { cambiati: 0, config: false };
+  const tx = db.transaction(CLOUD_ARCHIVI, 'readwrite');
+  let cambiati = 0; let config = false;
+  for (const v of voci) {
+    const st = tx.objectStore(v.archivio);
+    const id = v.eliminato ? v.id : v.record.id;
+    const req = st.get(id);
+    req.onsuccess = () => {
+      const locale = req.result;
+      if (v.eliminato) {
+        if (locale && (locale.updatedAt || '') <= v.quando) { st.delete(id); cambiati++; }
+        return;
+      }
+      if (locale && (v.record.updatedAt || '') === (locale.updatedAt || '') && v.archivio !== 'foto') return; // già uguale
+      if (!locale || (v.record.updatedAt || '') >= (locale.updatedAt || '')) {
+        st.put(v.record); cambiati++;
+        if (v.archivio === 'impostazioni') config = true;
+      }
+    };
+  }
+  await fineTransazione(tx);
+  return { cambiati, config };
+}
+async function riceviModifiche() {
+  let totale = 0; let config = false;
+  for (let giro = 0; giro < 1000; giro++) {
+    const r = await chiamaCloud(`/v1/pull?dopo=${statoCloud.ultimoSeq || 0}&limite=300`);
+    if (r.generazione !== statoCloud.generazione) { await cambioGenerazione(r.generazione); return { totale, config: true, sostituiti: true }; }
+    const voci = [];
+    for (const x of r.record) {
+      try {
+        const { oggetto, binario } = spacchetta(await decifraBytes(chiaviCloud, b64InBuf(x.d)));
+        if (!CLOUD_ARCHIVI.includes(oggetto.a)) continue;
+        if (oggetto.eliminato) voci.push({ archivio: oggetto.a, eliminato: true, id: oggetto.id, quando: oggetto.quando });
+        else {
+          const rec = oggetto.r;
+          if (oggetto.a === 'foto' && binario) { rec.blob = new Blob([binario], { type: rec.blobTipo || 'image/jpeg' }); delete rec.blobTipo; }
+          voci.push({ archivio: oggetto.a, record: rec });
+        }
+      } catch (e) { console.warn('Record del cloud non leggibile', e); }
+    }
+    ignoraEventoDati = true;
+    try { const esito = await applicaRicevuti(voci); totale += esito.cambiati; config = config || esito.config; }
+    finally { ignoraEventoDati = false; }
+    await salvaStatoCloud({ ultimoSeq: r.ultimo });
+    if (!r.altri) break;
+  }
+  return { totale, config };
+}
+// I dati nel cloud sono stati sostituiti da un altro dispositivo (ripristino o nuova password)
+async function cambioGenerazione(nuova) {
+  const st = await chiamaCloud('/v1/stato');
+  if (!(await controllaVerificatore(chiaviCloud, st.verificatore))) {
+    await salvaStatoCloud({ serveNuovaPassword: true, attivo: false });
+    throw Object.assign(new Error('La password del cloud è stata cambiata su un altro dispositivo: inseriscila di nuovo.'), { codice: 'password' });
+  }
+  try { await creaCopiaRipristino('prima'); } catch (e) { console.warn(e); }
+  const tx = db.transaction(CLOUD_ARCHIVI, 'readwrite'); for (const a of CLOUD_ARCHIVI) tx.objectStore(a).clear(); await fineTransazione(tx);
+  await salvaStatoCloud({ generazione: nuova, ultimoSeq: 0, ultimoPush: new Date().toISOString() });
+  await riceviModifiche();
+  toast('I dati sono stati sostituiti da un altro dispositivo collegato (ripristino di un backup). Una copia della situazione precedente è nei punti di ripristino.', { durata: 9000 });
+}
+
+/* ---------- ciclo di sincronizzazione ---------- */
+async function sincronizza({ manuale = false, tutto = false } = {}) {
+  if (!cloudAttivo() || !chiaviCloud) return null;
+  if (syncInCorso) return syncInCorso;
+  if (!navigator.onLine && !manuale) { impostaEsitoCloud('offline', 'In attesa di connessione'); return null; }
+  syncInCorso = (async () => {
+    impostaEsitoCloud('sync', 'Sincronizzazione…');
+    try {
+      const ricevuti = await riceviModifiche();
+      let inviati;
+      try { inviati = await inviaModifiche({ tutto }); }
+      catch (e) { if (e.stato === 409) { await riceviModifiche(); inviati = await inviaModifiche({ tutto }); } else throw e; }
+      await salvaStatoCloud({ ultimaSync: new Date().toISOString(), ultimoErrore: null });
+      impostaEsitoCloud('ok', `Sincronizzato alle ${D.hhmm(new Date())}`);
+      if (ricevuti.config) { await caricaConfig(); disegnaMenu(); }
+      if (ricevuti.totale || ricevuti.config) aggiornaDopoSync();
+      if (manuale) toast(ricevuti.totale || inviati ? `Sincronizzato: ${inviati} inviati, ${ricevuti.totale} ricevuti` : 'Tutto già sincronizzato');
+      return { ricevuti: ricevuti.totale, inviati };
+    } catch (e) {
+      const stato = e.codice === 'rete' ? 'offline' : 'errore';
+      impostaEsitoCloud(stato, e.message);
+      await salvaStatoCloud({ ultimoErrore: e.message });
+      if (e.stato === 401) await salvaStatoCloud({ attivo: false, scollegato: true });
+      if (manuale || (stato === 'errore' && e.codice !== 'rete')) toast(e.message, { errore: true, durata: 8000 });
+      const pannello = $('#i-cloud'); if (pannello && stato === 'errore') sezioneCloud(pannello).catch(console.warn);
+      return null;
+    } finally { syncInCorso = null; }
+  })();
+  return syncInCorso;
+}
+function aggiornaDopoSync() {
+  if (bloccata) return;
+  if (rottaCorrente.id === 'agenda' && calendario) { calendario.refetchEvents(); return; }
+  if (!modaliAperte.length) aggiornaVista();
+}
+function programmaSync(ritardoMs = 4000) {
+  if (!cloudAttivo()) return;
+  clearTimeout(timerSync); timerSync = setTimeout(() => sincronizza(), ritardoMs);
+}
+function impostaEsitoCloud(stato, testo) {
+  ultimoEsitoCloud = { stato, testo };
+  const b = $('#tb-cloud'); if (!b) return;
+  b.classList.toggle('nascosto', !statoCloud || (!statoCloud.attivo && !statoCloud.serveNuovaPassword && !statoCloud.scollegato));
+  b.dataset.stato = stato;
+  b.title = testo; b.setAttribute('aria-label', `Cloud: ${testo}`);
+}
+function avviaSyncAutomatica() {
+  Bus.addEventListener('dati', (e) => { if (!ignoraEventoDati && e.detail?.archivio !== 'meta') programmaSync(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) programmaSync(500); });
+  window.addEventListener('online', () => programmaSync(500));
+  setInterval(() => { if (!document.hidden) sincronizza(); }, 2 * 60 * 1000);
+  if (statoCloud?.serveNuovaPassword) impostaEsitoCloud('errore', 'Serve di nuovo la password del cloud');
+  else if (statoCloud?.scollegato) impostaEsitoCloud('errore', 'Dispositivo scollegato dal cloud');
+  else if (cloudAttivo()) { impostaEsitoCloud('ok', statoCloud.ultimaSync ? `Ultima sincronizzazione ${F.dataOra(new Date(statoCloud.ultimaSync))}` : 'Cloud attivo'); programmaSync(1500); }
+}
+// Dopo un ripristino di backup con il cloud attivo: il cloud viene sostituito con questi dati
+async function cloudSostituisciTutto() {
+  if (!cloudAttivo()) return;
+  const r = await chiamaCloud('/v1/reset', { metodo: 'POST', corpo: { sale: statoCloud.sale, verificatore: await creaVerificatore(chiaviCloud) } });
+  const tx = db.transaction('meta', 'readwrite'); const st = tx.objectStore('meta');
+  const req = st.getAll(); req.onsuccess = () => { for (const m of req.result) if (m.id.startsWith('elim:')) st.delete(m.id); };
+  await fineTransazione(tx);
+  await salvaStatoCloud({ generazione: r.generazione, ultimoSeq: 0, ultimoPush: '' });
+  await sincronizza({ tutto: true });
+}
+
+/* ---------- attivazione, collegamento, gestione (Impostazioni) ---------- */
+function nomeDispositivoPredefinito() {
+  const ua = navigator.userAgent;
+  if (/iPad/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'iPad';
+  if (/iPhone/i.test(ua)) return 'iPhone';
+  if (/Android/i.test(ua)) return /Mobile/i.test(ua) ? 'Telefono Android' : 'Tablet Android';
+  return 'Computer';
+}
+async function attivaCloud({ url, licenza, password, nome }) {
+  const sale = bufInB64(crypto.getRandomValues(new Uint8Array(16)));
+  const { aesRaw, hmacRaw } = await derivaChiaviCloud(password, sale);
+  const chiavi = await importaChiaviCloud(aesRaw, hmacRaw);
+  const r = await chiamaCloud('/v1/attiva', { metodo: 'POST', autenticato: false, url, corpo: { licenza, sale, verificatore: await creaVerificatore(chiavi), nomeDispositivo: nome } });
+  await salvaStatoCloud({ url, spazioId: r.spazioId, dispositivoId: r.dispositivoId, token: r.token, chiave: bufInB64(aesRaw), hmac: bufInB64(hmacRaw), sale, generazione: r.generazione, ultimoSeq: 0, ultimoPush: '', attivo: true, attivatoIl: new Date().toISOString(), serveNuovaPassword: false, scollegato: false });
+  chiaviCloud = chiavi;
+}
+async function collegaCloud({ url, codice, password, nome }) {
+  const r = await chiamaCloud('/v1/collega', { metodo: 'POST', autenticato: false, url, corpo: { codice, nomeDispositivo: nome } });
+  // il token resta valido anche se la password è sbagliata: la si può reinserire
+  await salvaStatoCloud({ url, spazioId: r.spazioId, dispositivoId: r.dispositivoId, token: r.token, sale: r.sale, generazione: r.generazione, ultimoSeq: 0, ultimoPush: '', attivo: false, serveNuovaPassword: true, scollegato: false, verificatore: r.verificatore });
+  return impostaPasswordCloud(password, r.verificatore);
+}
+async function impostaPasswordCloud(password, verificatore = null) {
+  let ver = verificatore; let sale = statoCloud.sale;
+  if (!ver) { const info = await chiamaCloud('/v1/stato'); ver = info.verificatore; sale = info.sale; }
+  const { aesRaw, hmacRaw } = await derivaChiaviCloud(password, sale);
+  const chiavi = await importaChiaviCloud(aesRaw, hmacRaw);
+  if (!(await controllaVerificatore(chiavi, ver))) return false;
+  await salvaStatoCloud({ chiave: bufInB64(aesRaw), hmac: bufInB64(hmacRaw), sale, serveNuovaPassword: false, verificatore: undefined });
+  chiaviCloud = chiavi;
+  return true;
+}
+async function cambiaPasswordCloud(nuova) {
+  const sale = bufInB64(crypto.getRandomValues(new Uint8Array(16)));
+  const { aesRaw, hmacRaw } = await derivaChiaviCloud(nuova, sale);
+  const chiavi = await importaChiaviCloud(aesRaw, hmacRaw);
+  const r = await chiamaCloud('/v1/reset', { metodo: 'POST', corpo: { sale, verificatore: await creaVerificatore(chiavi) } });
+  await salvaStatoCloud({ chiave: bufInB64(aesRaw), hmac: bufInB64(hmacRaw), sale, generazione: r.generazione, ultimoSeq: 0, ultimoPush: '' });
+  chiaviCloud = chiavi;
+  await sincronizza({ tutto: true });
+}
+async function scollegaCloud({ remoto = true } = {}) {
+  if (remoto && statoCloud?.dispositivoId) { try { await chiamaCloud(`/v1/dispositivi/${statoCloud.dispositivoId}`, { metodo: 'DELETE' }); } catch (e) { console.warn(e); } }
+  await Repo.meta.delete('cloud');
+  statoCloud = null; chiaviCloud = null; impostaEsitoCloud('spento', '');
+}
+
+async function sezioneCloud(cont) {
+  const st = statoCloud;
+  const serveAiuto = `<p class="muted piccolo" style="margin-top:0">I dati vengono cifrati su questo dispositivo con la <strong>password del cloud</strong> prima di partire: chi gestisce il server vede solo dati illeggibili. Il cloud fa da <strong>backup automatico</strong> e tiene allineati tutti i dispositivi collegati (per esempio iPad e iPhone).</p>`;
+  if (!st || (!st.attivo && !st.serveNuovaPassword && !st.scollegato)) {
+    const url = urlCloud();
+    cont.innerHTML = `${serveAiuto}
+      <div class="campo"><label for="cl-url">Indirizzo del servizio</label><input type="url" id="cl-url" value="${esc(url)}" placeholder="https://…" inputmode="url"><span class="aiuto">Te lo fornisce chi ti ha dato l'app.</span></div>
+      <div class="segmentato" role="group" aria-label="Scelta" style="margin-bottom:12px">
+        <button type="button" data-cl-modo="attiva" aria-pressed="true">Primo dispositivo</button>
+        <button type="button" data-cl-modo="collega" aria-pressed="false">Collega a un'agenda già attiva</button>
+      </div>
+      <div id="cl-attiva">
+        <div class="campo"><label for="cl-lic">Codice di attivazione</label><input type="text" id="cl-lic" autocomplete="off" autocapitalize="characters" placeholder="XXXX-XXXX-XXXX"></div>
+      </div>
+      <div id="cl-collega" class="nascosto">
+        <div class="campo"><label for="cl-cod">Codice di collegamento</label><input type="text" id="cl-cod" autocomplete="off" autocapitalize="characters" placeholder="XXXXX-XXXXX"><span class="aiuto">Sul dispositivo già collegato: Impostazioni → Cloud → “Collega un altro dispositivo”.</span></div>
+      </div>
+      <div class="riga-campi">
+        <div class="campo"><label for="cl-p1">Password del cloud</label><input type="password" id="cl-p1" autocomplete="new-password"></div>
+        <div class="campo" id="cl-p2-campo"><label for="cl-p2">Ripeti la password</label><input type="password" id="cl-p2" autocomplete="new-password"></div>
+        <div class="campo"><label for="cl-nome">Nome di questo dispositivo</label><input type="text" id="cl-nome" value="${esc(nomeDispositivoPredefinito())}"></div>
+      </div>
+      <div class="box box-avviso piccolo"><strong>Scrivi la password in un posto sicuro.</strong>Senza password i dati nel cloud non si possono leggere da nessuno, nemmeno da chi gestisce il servizio. I dati su questo dispositivo restano comunque utilizzabili.</div>
+      <button type="button" class="btn btn-primario" id="cl-vai">Attiva il cloud</button>
+      <p id="cl-avanz" class="muted piccolo" role="status"></p>`;
+    let modo = 'attiva';
+    const s = (q) => $(q, cont);
+    $$('[data-cl-modo]', cont).forEach((b) => b.addEventListener('click', () => {
+      modo = b.dataset.clModo; $$('[data-cl-modo]', cont).forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      s('#cl-attiva').classList.toggle('nascosto', modo !== 'attiva'); s('#cl-collega').classList.toggle('nascosto', modo !== 'collega');
+      s('#cl-p2-campo').classList.toggle('nascosto', modo !== 'attiva');
+      s('#cl-vai').textContent = modo === 'attiva' ? 'Attiva il cloud' : 'Collega questo dispositivo';
+    }));
+    s('#cl-vai').addEventListener('click', async () => {
+      const url = s('#cl-url').value.trim().replace(/\/+$/, ''); const password = s('#cl-p1').value; const nome = s('#cl-nome').value.trim() || nomeDispositivoPredefinito();
+      if (!/^https:\/\/|^http:\/\/(localhost|127\.0\.0\.1)/.test(url)) { toast('Inserisci l\'indirizzo del servizio (https://…).'); return; }
+      if (password.length < 8) { toast('La password deve avere almeno 8 caratteri.'); return; }
+      const btn = s('#cl-vai'); btn.disabled = true;
+      const avanz = (fatti, tot) => { s('#cl-avanz').textContent = `Invio dei dati cifrati: ${fatti} di ${tot}…`; };
+      try {
+        if (modo === 'attiva') {
+          if (password !== s('#cl-p2').value) { toast('Le due password non coincidono.'); return; }
+          s('#cl-avanz').textContent = 'Attivazione…';
+          await attivaCloud({ url, licenza: s('#cl-lic').value, password, nome });
+          await inviaModifiche({ tutto: true, avanzamento: avanz });
+          await salvaStatoCloud({ ultimaSync: new Date().toISOString() });
+          toast('Cloud attivato: i dati sono al sicuro e si sincronizzano da soli.', { durata: 6000 });
+        } else {
+          s('#cl-avanz').textContent = 'Collegamento…';
+          const ok = await collegaCloud({ url, codice: s('#cl-cod').value, password, nome });
+          if (!ok) { toast('Password del cloud errata. Riprova.', { errore: true }); sezioneCloud(cont); return; }
+          await completaCollegamento(avanz);
+        }
+        impostaEsitoCloud('ok', 'Cloud attivo'); sezioneCloud(cont); aggiornaDopoSync();
+      } catch (e) { erroreUI(e); } finally { btn.disabled = false; }
+    });
+    return;
+  }
+  if (st.serveNuovaPassword) {
+    cont.innerHTML = `<div class="box box-avviso"><strong>Serve la password del cloud</strong>${st.attivatoIl ? 'La password è stata cambiata su un altro dispositivo.' : 'Inserisci la password scelta quando hai attivato il cloud.'}</div>
+      <div class="campo"><label for="cl-np">Password del cloud</label><input type="password" id="cl-np" autocomplete="current-password"></div>
+      <div class="gruppo-btn"><button type="button" class="btn btn-primario" id="cl-np-ok">Continua</button><button type="button" class="btn btn-ghost" id="cl-np-esci">Scollega questo dispositivo</button></div><p id="cl-avanz" class="muted piccolo"></p>`;
+    $('#cl-np-ok', cont).addEventListener('click', async () => {
+      try {
+        const ok = await impostaPasswordCloud($('#cl-np', cont).value, st.verificatore || null);
+        if (!ok) { toast('Password errata.', { errore: true }); return; }
+        if (!st.attivatoIl) await completaCollegamento((f, t) => { $('#cl-avanz', cont).textContent = `Invio: ${f} di ${t}…`; });
+        else {
+          // password cambiata altrove: i dati del cloud sono stati ricifrati → si riscaricano
+          await salvaStatoCloud({ attivo: true });
+          const info = await chiamaCloud('/v1/stato');
+          await cambioGenerazione(info.generazione);
+          await salvaStatoCloud({ ultimaSync: new Date().toISOString() }); impostaEsitoCloud('ok', 'Cloud attivo');
+        }
+        sezioneCloud(cont); aggiornaDopoSync();
+      } catch (e) { erroreUI(e); }
+    });
+    $('#cl-np-esci', cont).addEventListener('click', async () => { await scollegaCloud({ remoto: true }); sezioneCloud(cont); });
+    return;
+  }
+  if (st.scollegato) {
+    cont.innerHTML = `<div class="box box-pericolo"><strong>Questo dispositivo non è più collegato al cloud</strong>${esc(st.ultimoErrore || 'È stato scollegato da un altro dispositivo oppure l\'abbonamento non è attivo.')}</div>
+      <button type="button" class="btn" id="cl-reset">Ricomincia la configurazione del cloud</button>`;
+    $('#cl-reset', cont).addEventListener('click', async () => { await scollegaCloud({ remoto: false }); sezioneCloud(cont); });
+    return;
+  }
+  // Cloud attivo
+  cont.innerHTML = `${serveAiuto}<p>Caricamento dello stato…</p>`;
+  let info = null; try { info = await chiamaCloud('/v1/stato'); } catch (e) { /* offline */ }
+  cont.innerHTML = `${serveAiuto}
+    <dl class="kv">
+      <dt>Stato</dt><dd><span class="badge ${ultimoEsitoCloud.stato === 'ok' ? 'badge-ok' : ultimoEsitoCloud.stato === 'errore' ? 'badge-pericolo' : 'badge-avviso'}">${esc(ultimoEsitoCloud.testo || 'attivo')}</span></dd>
+      <dt>Ultima sincronizzazione</dt><dd>${st.ultimaSync ? esc(F.dataOra(new Date(st.ultimaSync))) : '—'}</dd>
+      ${info ? `<dt>Spazio usato</dt><dd>${(info.byte / 1048576).toFixed(1).replace('.', ',')} MB · ${info.record} elementi</dd>` : ''}
+    </dl>
+    ${info ? `<h3 style="margin-top:12px">Dispositivi collegati</h3><ul class="lista">${info.dispositivi.map((d) => `<li><div class="riga" style="cursor:default"><span class="principale"><span class="titolo">${esc(d.nome || 'Dispositivo')}${d.id === st.dispositivoId ? ' <span class="badge">questo</span>' : ''}</span><div class="sotto">ultimo accesso ${esc(F.dataOra(new Date(d.ultimo)))}</div></span>${d.id !== st.dispositivoId ? `<button type="button" class="btn btn-piccolo btn-ghost" data-cl-revoca="${esc(d.id)}" style="color:var(--pericolo)">Scollega</button>` : ''}</div></li>`).join('')}</ul>` : '<p class="muted">Cloud non raggiungibile in questo momento: i dati restano qui e verranno inviati appena torna la connessione.</p>'}
+    <div class="gruppo-btn" style="margin-top:10px">
+      <button type="button" class="btn btn-primario" id="cl-sync">Sincronizza ora</button>
+      <button type="button" class="btn" id="cl-codice">Collega un altro dispositivo</button>
+      <button type="button" class="btn" id="cl-pw">Cambia password del cloud</button>
+      <button type="button" class="btn btn-ghost" id="cl-esci" style="color:var(--pericolo)">Scollega questo dispositivo</button>
+    </div>
+    <div id="cl-codice-box"></div>`;
+  $('#cl-sync', cont).addEventListener('click', async () => { await sincronizza({ manuale: true }); sezioneCloud(cont); });
+  $('#cl-codice', cont).addEventListener('click', async () => {
+    try {
+      const r = await chiamaCloud('/v1/collega/codice', { metodo: 'POST' });
+      $('#cl-codice-box', cont).innerHTML = `<div class="box box-info" style="margin-top:10px"><strong>Codice di collegamento</strong>
+        <div style="font-size:1.8rem;font-weight:800;letter-spacing:.12em;font-variant-numeric:tabular-nums;margin:6px 0">${esc(r.codice)}</div>
+        Valido fino alle ${esc(D.hhmm(new Date(r.scade)))}, una sola volta. Sull'altro dispositivo apri l'agenda installata → Impostazioni → Cloud → <em>Collega a un'agenda già attiva</em>, inserisci questo codice e la password del cloud.</div>`;
+    } catch (e) { erroreUI(e); }
+  });
+  $('#cl-pw', cont).addEventListener('click', async () => {
+    const corpo = document.createElement('div');
+    corpo.innerHTML = `<p style="margin-top:0">Tutti i dati vengono cifrati di nuovo e caricati con la nuova password. Sugli altri dispositivi collegati verrà chiesta la nuova password.</p>
+      <div class="campo"><label for="cl-pw1">Nuova password</label><input type="password" id="cl-pw1" autocomplete="new-password"></div>
+      <div class="campo"><label for="cl-pw2">Ripeti</label><input type="password" id="cl-pw2" autocomplete="new-password"></div>`;
+    apriModale({ titolo: 'Cambia password del cloud', corpo, azioni: [{ testo: 'Annulla' }, { testo: 'Cambia password', classe: 'btn-primario', onClick: async () => {
+      const a = $('#cl-pw1', corpo).value; if (a.length < 8) { toast('Almeno 8 caratteri.'); return false; }
+      if (a !== $('#cl-pw2', corpo).value) { toast('Le password non coincidono.'); return false; }
+      await cambiaPasswordCloud(a); toast('Password del cloud cambiata.'); sezioneCloud(cont); return true;
+    } }] });
+  });
+  $('#cl-esci', cont).addEventListener('click', async () => {
+    if (!(await conferma({ titolo: 'Scollegare questo dispositivo?', messaggio: 'I dati restano su questo dispositivo, ma non verranno più salvati nel cloud né sincronizzati con gli altri.', ok: 'Scollega', pericolo: true }))) return;
+    await sincronizza(); await scollegaCloud({ remoto: true }); toast('Dispositivo scollegato dal cloud'); sezioneCloud(cont);
+  });
+  $$('[data-cl-revoca]', cont).forEach((b) => b.addEventListener('click', async () => {
+    if (!(await conferma({ titolo: 'Scollegare quel dispositivo?', messaggio: 'Non potrà più ricevere né inviare dati finché non viene ricollegato con un nuovo codice. Usalo se un telefono o un tablet è stato perso.', ok: 'Scollega', pericolo: true }))) return;
+    await chiamaCloud(`/v1/dispositivi/${b.dataset.clRevoca}`, { metodo: 'DELETE' }); sezioneCloud(cont);
+  }));
+}
+// Secondo dispositivo: unire o sostituire i dati locali con quelli del cloud
+async function completaCollegamento(avanzamento) {
+  const locali = (await Repo.clienti.count()) + (await Repo.appuntamenti.count()) + (await Repo.prodotti.count());
+  let scelta = 'sostituisci';
+  if (locali) {
+    scelta = await apriModale({ titolo: 'Ci sono già dati su questo dispositivo', corpo: `<p>Su questo dispositivo ci sono già clienti o appuntamenti. Cosa vuoi fare?</p>
+      <ul><li><strong>Unisci</strong>: tieni i dati di qui e aggiungi quelli del cloud (in caso di doppioni vince la modifica più recente).</li>
+      <li><strong>Usa solo i dati del cloud</strong>: i dati di qui vengono sostituiti (prima viene creato un punto di ripristino).</li></ul>`, chiudibile: false, azioni: [
+      { testo: 'Usa solo i dati del cloud', valore: 'sostituisci' }, { testo: 'Unisci', valore: 'unisci', classe: 'btn-primario' }] }).promessa || 'sostituisci';
+  }
+  if (scelta === 'sostituisci' && locali) {
+    try { await creaCopiaRipristino('prima'); } catch (e) { console.warn(e); }
+    const tx = db.transaction(CLOUD_ARCHIVI, 'readwrite'); for (const a of CLOUD_ARCHIVI) tx.objectStore(a).clear(); await fineTransazione(tx);
+  }
+  await salvaStatoCloud({ attivo: true, attivatoIl: new Date().toISOString(), ultimoPush: scelta === 'unisci' ? '' : new Date().toISOString() });
+  await riceviModifiche();
+  if (scelta === 'unisci') await inviaModifiche({ tutto: true, avanzamento });
+  await salvaStatoCloud({ ultimaSync: new Date().toISOString() });
+  await caricaConfig(); disegnaMenu();
+  toast('Dispositivo collegato: i dati sono allineati.', { durata: 6000 });
+}
+</script>
+<script>
+'use strict';
+/* =====================================================================================
    AVVIO
    ===================================================================================== */
 async function seminaServizi() {
@@ -4697,6 +5468,7 @@ async function avvia() {
   try {
     await eseguiMigrazioniAvvio();
     await caricaConfig();
+    await caricaStatoCloud();
     await seminaServizi();
     if (!(await leggiMeta('persistenzaRichiesta'))) { await richiediPersistenza(); await scriviMeta('persistenzaRichiesta', new Date().toISOString()); }
   } catch (e) { console.error(e); erroreFatale('Avvio non riuscito', e.message || String(e)); return; }
@@ -4711,6 +5483,14 @@ async function avvia() {
   $('#avvio').remove();
   aggiornaPulsanteBlocco();
   avviaControlloInattivita();
+  avviaAdattamentoTastiera();
+  avviaCopieAutomatiche();
+  avviaSyncAutomatica();
+  $('#tb-cloud').addEventListener('click', () => {
+    if (ultimoEsitoCloud.stato === 'errore' || !cloudAttivo()) { vai('#/impostazioni'); setTimeout(() => $('#cloud')?.scrollIntoView({ behavior: 'smooth' }), 400); }
+    else sincronizza({ manuale: true });
+  });
+  if (!bloccata) guidaInstallazioneIOS().catch(erroreUI);
   if (!window.FullCalendar) toast('Il calendario non si è caricato: serve internet al primo avvio, oppure la cartella “vendor” accanto al file. Clienti, magazzino e schede funzionano comunque.', { errore: true, durata: 9000 });
   // Backup automatico in cartella (se configurato): silenzioso, al massimo uno al giorno
   const auto = () => backupAutomatico().catch((e) => console.warn('Backup automatico non riuscito', e));

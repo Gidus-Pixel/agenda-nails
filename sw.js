@@ -4,7 +4,7 @@
    - Calendario, icone e manifest: "prima dalla copia salvata" (i file hanno la versione nel nome o cambiano raramente).
    - I DATI non passano mai di qui: restano in IndexedDB nel browser.
    Ad ogni nuova pubblicazione cambia VERSIONE: l'app propone "Aggiorna" e ricarica. */
-const VERSIONE = 'agenda-nails-1.0.0';
+const VERSIONE = 'agenda-nails-1.1.0';
 const DA_SALVARE = [
   './',
   './index.html',

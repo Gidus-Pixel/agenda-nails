@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Gestione cloud</title>
+<style>
+  :root { --bg: #f7f5f5; --surface: #fff; --testo: #231a1b; --testo-2: #5f5355; --bordo: #e2d8d9; --primario: #b4646e; --pericolo: #b42318; --ok: #0f6b45; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #161213; --surface: #211b1c; --testo: #f4eeee; --testo-2: #c4b8b9; --bordo: #3d3334; --pericolo: #ff8a80; --ok: #7fd8a8; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--testo); }
+  main { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; } h2 { font-size: 1.1rem; margin: 0 0 10px; }
+  .muted { color: var(--testo-2); } .piccolo { font-size: .875rem; }
+  .card { background: var(--surface); border: 1px solid var(--bordo); border-radius: 14px; padding: 16px; margin-top: 14px; }
+  label { display: block; font-weight: 600; font-size: .9rem; margin-bottom: 4px; }
+  input { font: inherit; width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--bordo); border-radius: 10px; background: var(--surface); color: var(--testo); }
+  .riga { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items: end; }
+  button { font: inherit; font-weight: 600; min-height: 44px; padding: 8px 16px; border-radius: 10px; border: 1px solid var(--bordo); background: var(--surface); color: var(--testo); cursor: pointer; }
+  button.primario { background: var(--primario); color: #fff; border-color: transparent; }
+  button.pericolo { color: var(--pericolo); }
+  .codice { font-size: 1.6rem; font-weight: 800; letter-spacing: .1em; font-variant-numeric: tabular-nums; margin: 8px 0; user-select: all; }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--bordo); vertical-align: middle; }
+  th { color: var(--testo-2); font-weight: 600; }
+  .tab-wrap { overflow-x: auto; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .78rem; font-weight: 650; }
+  .attivo { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
+  .sospeso { background: color-mix(in srgb, var(--pericolo) 15%, transparent); color: var(--pericolo); }
+  #msg { min-height: 1.4em; margin-top: 8px; }
+  .errore { color: var(--pericolo); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Gestione cloud dell'agenda</h1>
+  <p class="muted">Pagina per il fornitore dell'app: crea i codici di attivazione per le estetiste e controlla gli abbonamenti. I dati delle clienti sono cifrati e qui non si vedono.</p>
+
+  <section class="card">
+    <h2>Accesso</h2>
+    <div class="riga">
+      <div><label for="url">Indirizzo del servizio cloud</label><input id="url" type="url" placeholder="https://agenda-cloud.tuoaccount.workers.dev" autocomplete="url"></div>
+      <div><label for="token">Chiave amministratore (ADMIN_TOKEN)</label><input id="token" type="password" autocomplete="current-password"></div>
+      <div><button class="primario" id="entra" type="button">Mostra gli abbonamenti</button></div>
+    </div>
+    <p class="muted piccolo">La chiave resta solo in questa pagina finché è aperta: non viene salvata.</p>
+    <div id="msg" role="status"></div>
+  </section>
+
+  <section class="card">
+    <h2>Nuovo codice di attivazione</h2>
+    <div class="riga">
+      <div><label for="nota">Per chi è (nome del salone)</label><input id="nota" type="text" placeholder="es. Nails by Giulia — Velletri"></div>
+      <div><button class="primario" id="crea" type="button">Crea codice</button></div>
+    </div>
+    <div id="nuovo"></div>
+  </section>
+
+  <section class="card">
+    <h2>Abbonamenti</h2>
+    <div class="tab-wrap"><table>
+      <thead><tr><th>Salone</th><th>Stato</th><th>Dispositivi</th><th>Spazio</th><th>Ultimo accesso</th><th>Attivato</th><th></th></tr></thead>
+      <tbody id="elenco"><tr><td colspan="7" class="muted">Inserisci indirizzo e chiave, poi “Mostra gli abbonamenti”.</td></tr></tbody>
+    </table></div>
+  </section>
+</main>
+<script>
+'use strict';
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const dataOra = (iso) => iso ? new Intl.DateTimeFormat('it-IT', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(iso)) : '—';
+try { $('#url').value = localStorage.getItem('agenda-cloud-admin-url') || ''; } catch (e) { /* storage non disponibile */ }
+function messaggio(t, errore = false) { $('#msg').textContent = t; $('#msg').className = errore ? 'errore' : 'muted'; }
+async function api(percorso, metodo = 'GET', corpo = null) {
+  const url = $('#url').value.trim().replace(/\/+$/, '');
+  if (!url) throw new Error('Inserisci l\'indirizzo del servizio.');
+  try { localStorage.setItem('agenda-cloud-admin-url', url); } catch (e) { /* ignorato */ }
+  const r = await fetch(url + percorso, { method: metodo, headers: { Authorization: `Bearer ${$('#token').value}`, ...(corpo ? { 'Content-Type': 'application/json' } : {}) }, body: corpo ? JSON.stringify(corpo) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.messaggio || `Errore ${r.status}`);
+  return j;
+}
+async function carica() {
+  try {
+    const { spazi } = await api('/admin/spazi');
+    $('#elenco').innerHTML = spazi.map((s) => `<tr>
+      <td>${esc(s.nota || '—')}</td>
+      <td><span class="badge ${s.revocata ? 'sospeso' : 'attivo'}">${s.revocata ? 'sospeso' : 'attivo'}</span></td>
+      <td>${s.dispositivi}</td>
+      <td>${(s.byte / 1048576).toFixed(1).replace('.', ',')} MB</td>
+      <td>${esc(dataOra(s.ultimo_accesso))}</td>
+      <td>${esc(dataOra(s.creato))}</td>
+      <td style="white-space:nowrap"><button type="button" data-az="${s.revocata ? 'riattiva' : 'sospendi'}" data-id="${esc(s.id)}">${s.revocata ? 'Riattiva' : 'Sospendi'}</button>
+        <button type="button" class="pericolo" data-az="elimina" data-id="${esc(s.id)}" data-nota="${esc(s.nota)}">Elimina dati</button></td></tr>`).join('') || '<tr><td colspan="7" class="muted">Nessun abbonamento attivato.</td></tr>';
+    messaggio(`${spazi.length} abbonament${spazi.length === 1 ? 'o' : 'i'}.`);
+  } catch (e) { messaggio(e.message, true); }
+}
+$('#entra').addEventListener('click', carica);
+$('#crea').addEventListener('click', async () => {
+  try {
+    const r = await api('/admin/licenze', 'POST', { nota: $('#nota').value.trim() });
+    $('#nuovo').innerHTML = `<p>Codice per <strong>${esc(r.nota || 'nuovo salone')}</strong> (valido per una attivazione):</p><div class="codice">${esc(r.codice)}</div>
+      <p class="muted piccolo">Copialo ora: per sicurezza il server non lo conserva in chiaro e non potrà mostrarlo di nuovo. L'estetista lo inserisce in Impostazioni → Dati → Cloud → “Primo dispositivo”.</p>`;
+    $('#nota').value = '';
+  } catch (e) { messaggio(e.message, true); }
+});
+$('#elenco').addEventListener('click', async (ev) => {
+  const b = ev.target.closest('button[data-az]'); if (!b) return;
+  try {
+    if (b.dataset.az === 'elimina') {
+      const conf = prompt(`Eliminare DEFINITIVAMENTE i dati cloud di “${b.dataset.nota || 'questo salone'}”? I dati sui dispositivi dell'estetista restano. Scrivi ELIMINA per confermare.`);
+      if (conf !== 'ELIMINA') return;
+      await api(`/admin/spazi/${b.dataset.id}`, 'DELETE');
+    } else await api(`/admin/spazi/${b.dataset.id}/${b.dataset.az}`, 'POST', {});
+    carica();
+  } catch (e) { messaggio(e.message, true); }
+});
+</script>
+</body>
+</html>

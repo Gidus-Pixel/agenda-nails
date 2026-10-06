@@ -1,0 +1,12 @@
+{
+  "name": "agenda-cloud",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "migra-locale": "wrangler d1 migrations apply agenda-cloud --local",
+    "migra": "wrangler d1 migrations apply agenda-cloud --remote"
+  },
+  "devDependencies": { "wrangler": "4.147.0" }
+}

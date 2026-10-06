@@ -1,0 +1,16 @@
+name = "agenda-cloud"
+main = "src/index.js"
+compatibility_date = "2026-06-01"
+
+# Database creato con: npx wrangler d1 create agenda-cloud --jurisdiction eu  (dati solo nell'UE)
+[[d1_databases]]
+binding = "DB"
+database_name = "agenda-cloud"
+database_id = "DA-COMPILARE-dopo-wrangler-d1-create"
+migrations_dir = "migrations"
+
+[vars]
+# Indirizzi da cui l'app può usare il cloud (separati da virgola). Vuoto = tutti.
+ORIGINI = "https://gidus-pixel.github.io"
+
+# Segreto (non scriverlo qui): npx wrangler secret put ADMIN_TOKEN

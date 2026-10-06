@@ -12,6 +12,10 @@ Agenda gestionale per nail artist ed estetiste, in italiano, pensata per l'uso q
 - **Fornitori e ordini**: anagrafica completa e spesa per periodo. L'ordine si può inviare via WhatsApp o email con il testo già pronto. Il ricevimento può essere totale o parziale, con carico automatico in magazzino. Le bozze d'ordine si creano direttamente dai prodotti sotto scorta.
 - **Appunti**: tag, colori, appunti fissati in alto, ricerca e promemoria con data. Ogni appunto si può collegare a una cliente, un fornitore, un prodotto o un appuntamento.
 - **Report**: incassi, servizi più richiesti, mancate presentazioni, consumi, vendite e spesa per fornitore. Esportazione CSV compatibile con Excel in italiano.
+- **Cloud cifrato** (facoltativo): backup automatico continuo e sincronizzazione tra iPad, iPhone e computer. I dati sono cifrati sul dispositivo e il server non può leggerli. Vedi [`cloud/README.md`](cloud/README.md).
+- **Punti di ripristino**: una copia automatica al giorno sul dispositivo (ultime 7), per rimediare agli errori.
+- **Promemoria di domani in sequenza**: un tocco per cliente, WhatsApp si apre con il messaggio pronto.
+- **iPhone e iPad**: guida all'installazione sulla schermata Home e salvataggio dei file con il foglio "Condividi" (nelle app installate iOS non consente i download).
 - **Sicurezza e dati**:
   - blocco con PIN;
   - backup completo, con o senza foto, eventualmente cifrato con password (AES-256);
@@ -31,6 +35,7 @@ L'agenda è un gestionale interno e **non sostituisce gli adempimenti fiscali** 
 
 ## Come si usa
 
+- **Su iPhone e iPad**: va **installata prima di inserire dati**. Safari e l'app sulla schermata Home hanno archivi separati: quanto inserito in Safari non compare nell'app installata. L'agenda lo ricorda con una guida all'apertura.
 - **Da tablet o telefono (consigliato)**:
   1. Apri l'indirizzo qui sopra con Chrome (Android) o Safari (iPad/iPhone).
   2. Installa l'app: su Chrome dal menu ⋮ → *Installa app*, su Safari da Condividi → *Aggiungi alla schermata Home*.
