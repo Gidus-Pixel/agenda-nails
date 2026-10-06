@@ -1,0 +1,13 @@
+{
+ "password": "passwordsalone1",
+ "sale": "AAECAwQFBgcICQoLDA0ODw==",
+ "aes": "xD/eeXcSd8XW55eoIsEHBbRxtGgeiRebkfKthRzPVNs=",
+ "hmac": "sgOq1t44fckmSRVC74Fz60x8b7k5rmQyvOXa1RiIbw4=",
+ "iv": "oaKjpKWmp6ipqqus",
+ "pacchetto": "AQAAAFR7ImEiOiJjbGllbnRpIiwiciI6eyJpZCI6ImMxIiwibm9tZSI6IkFubmEiLCJ1cGRhdGVkQXQiOiIyMDI2LTEwLTA2VDEwOjAwOjAwLjAwMFoifX0=",
+ "cifrato": "oaKjpKWmp6ipqqusndrbqTq4dwFzMj/Y8y9Kd4chJIumOKyy/7WjtPTeRZk5SwVPaGqICsbr6X2eo0qduvK2Z4NMC3W00M+CB6s+b2XXrozy6rpeaa4oPm0EUA37KZCq137y1U8yiwdAR9fw6fq/o0NdI8p6",
+ "chiaveRecord": "quWEUfO8yQKhBAxMQ9kV9tfqVumHRHNJYFlYLRgM4BQ",
+ "verificatore": "sbKztLW2t7i5uru8r7SxYYtt70tjQcjBZNWaNbiUVwLjt1sLpH6EfflkLuQcaukvSy5syw==",
+ "chiaveBackup256": "xD/eeXcSd8XW55eoIsEHBbRxtGgeiRebkfKthRzPVNs=",
+ "ms": 155
+}

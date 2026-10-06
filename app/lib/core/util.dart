@@ -25,7 +25,14 @@ String isoJs(DateTime d) {
 String adessoIso() => isoJs(DateTime.now());
 
 /// Copia profonda di dati JSON.
-T clona<T>(T v) => v == null ? v : jsonDecode(jsonEncode(v)) as T;
+T clona<T>(T v) {
+  if (v == null) return v;
+  final r = jsonDecode(jsonEncode(v));
+  if (r is T) return r;
+  // jsonDecode restituisce List<dynamic>: per le liste di record serve List<Doc>
+  if (r is List) return List<Doc>.from(r.map((e) => (e as Map).cast<String, dynamic>())) as T;
+  return r as T;
+}
 
 Doc clonaDoc(Doc d) => (jsonDecode(jsonEncode(d)) as Map).cast<String, dynamic>();
 

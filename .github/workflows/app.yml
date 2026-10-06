@@ -24,6 +24,7 @@ jobs:
   verifica:
     name: Analisi, test, Android, anteprima web
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     defaults: { run: { working-directory: app, shell: bash } }
     steps:
       - uses: actions/checkout@v4
@@ -56,6 +57,8 @@ jobs:
         run: set -o pipefail; flutter analyze --no-fatal-infos 2>&1 | tee "$LOG/03-analisi.txt"
 
       - name: Test
+        # fuso italiano: i test controllano i giorni del cambio dell'ora
+        env: { TZ: Europe/Rome }
         run: set -o pipefail; flutter test 2>&1 | tee "$LOG/04-test.txt"
 
       - name: Anteprima web
@@ -90,6 +93,7 @@ jobs:
     name: iOS (compilazione e schermate sul simulatore)
     needs: verifica
     runs-on: macos-latest
+    timeout-minutes: 60
     defaults: { run: { working-directory: app, shell: bash } }
     steps:
       - uses: actions/checkout@v4
@@ -105,8 +109,11 @@ jobs:
         run: set -o pipefail; flutter build ios --simulator --debug 2>&1 | tee "$LOG/11-simulatore.txt"
 
       - name: Schermate su iPhone e iPad
+        timeout-minutes: 25
         run: |
           set -e
+          # ogni comando del simulatore ha un tempo massimo (a volte resta appeso)
+          limite() { local s=$1; shift; perl -e 'alarm shift; exec @ARGV' "$s" "$@"; }
           APPDIR=build/ios/iphonesimulator/Runner.app
           BUNDLE=$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$APPDIR/Info.plist")
           xcrun simctl list devices available > "$LOG/12-simulatori.txt"
@@ -114,18 +121,19 @@ jobs:
           for MODELLO in "iPhone" "iPad"; do
             UDID=$(scegli "$MODELLO")
             [ -z "$UDID" ] && { echo "Nessun simulatore $MODELLO"; continue; }
-            xcrun simctl boot "$UDID" || true
-            xcrun simctl bootstatus "$UDID" -b
-            xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 --wifiBars 3 || true
-            xcrun simctl install "$UDID" "$APPDIR"
-            for SCHERMATA in ${SCHERMATE:-oggi agenda agenda-settimana clienti cliente appuntamento impostazioni}; do
-              xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
-              SIMCTL_CHILD_AGENDA_DEMO=1 SIMCTL_CHILD_AGENDA_SCHERMATA=$SCHERMATA xcrun simctl launch "$UDID" "$BUNDLE" >> "$LOG/13-avvio.txt" 2>&1
-              sleep 14
-              xcrun simctl io "$UDID" screenshot "schermate/${MODELLO}-${SCHERMATA}.png"
+            limite 120 xcrun simctl boot "$UDID" || true
+            limite 240 xcrun simctl bootstatus "$UDID" -b || true
+            sleep 5
+            limite 30 xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 --wifiBars 3 || true
+            limite 120 xcrun simctl install "$UDID" "$APPDIR"
+            for SCHERMATA in ${SCHERMATE:-oggi agenda agenda-settimana appuntamento clienti cliente impostazioni dati}; do
+              limite 30 xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
+              SIMCTL_CHILD_AGENDA_DEMO=1 SIMCTL_CHILD_AGENDA_SCHERMATA=$SCHERMATA limite 60 xcrun simctl launch "$UDID" "$BUNDLE" >> "$LOG/13-avvio.txt" 2>&1 || echo "avvio $SCHERMATA non riuscito" >> "$LOG/13-avvio.txt"
+              sleep 12
+              limite 60 xcrun simctl io "$UDID" screenshot "schermate/${MODELLO}-${SCHERMATA}.png" || true
             done
-            xcrun simctl spawn "$UDID" log show --last 3m --predicate 'process == "Runner"' --style compact > "$LOG/14-log-${MODELLO}.txt" 2>/dev/null || true
-            xcrun simctl shutdown "$UDID" || true
+            limite 60 xcrun simctl spawn "$UDID" log show --last 3m --predicate 'process == "Runner"' --style compact > "$LOG/14-log-${MODELLO}.txt" 2>/dev/null || true
+            limite 60 xcrun simctl shutdown "$UDID" || true
           done
 
       - name: Schermate nel ramo "ci-schermate"
