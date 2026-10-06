@@ -38,7 +38,7 @@ void main() {
     expect(find.textContaining('Buon'), findsWidgets);
 
     await scheda(t, 'Agenda');
-    expect(find.textContaining('Tocca uno spazio libero'), findsOneWidget);
+    expect(find.text('Oggi'), findsWidgets); // pulsante "Oggi" dell'agenda
     await t.tap(find.widgetWithText(FloatingActionButton, 'Appuntamento').last);
     await t.pumpAndSettle();
     expect(find.text('Nuovo appuntamento'), findsOneWidget);
