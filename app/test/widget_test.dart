@@ -61,7 +61,7 @@ void main() {
     expect(find.text('Gel costruttore rosa (prova)'), findsOneWidget);
     await t.tap(find.text('Gel costruttore rosa (prova)'));
     await t.pumpAndSettle();
-    expect(find.textContaining('Movimenti'), findsOneWidget);
+    expect(find.text('Usa'), findsOneWidget); // pulsanti di carico e consumo
     t.state<NavigatorState>(find.byType(Navigator).first).pop();
     await t.pumpAndSettle();
 
