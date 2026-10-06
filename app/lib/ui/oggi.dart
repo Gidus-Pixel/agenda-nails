@@ -90,16 +90,23 @@ class PaginaOggi extends StatelessWidget {
 
         return Scaffold(
           body: CustomScrollView(slivers: [
-            SliverAppBar.large(
-              title: Text(titolare.isEmpty ? saluto : '$saluto, $titolare'),
-              actions: [
-                IconButton(tooltip: 'Nuova cliente', onPressed: () => navigazione.vai(2), icon: const Icon(Icons.person_search_outlined)),
-              ],
-            ),
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(S.l, 0, S.l, S.m),
-                child: Text(F.giornoLungo(ora) + (d.nomeAttivita.isEmpty ? '' : ' · ${d.nomeAttivita}'), style: t.titleMedium?.copyWith(color: cs.onSurfaceVariant)),
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(S.l, S.xl, S.s, S.l),
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(F.giornoLungo(ora).toUpperCase(), style: t.labelMedium?.copyWith(color: cs.primary, letterSpacing: 1.2)),
+                        const SizedBox(height: 4),
+                        Text(titolare.isEmpty ? saluto : '$saluto, $titolare', style: t.headlineMedium),
+                        if (d.nomeAttivita.isNotEmpty) Text(d.nomeAttivita, style: t.bodyLarge?.copyWith(color: cs.onSurfaceVariant)),
+                      ]),
+                    ),
+                    IconButton(tooltip: 'Cerca una cliente', onPressed: () => navigazione.vai(2), icon: const Icon(Icons.person_search_outlined)),
+                  ]),
+                ),
               ),
             ),
             SliverPadding(

@@ -128,7 +128,6 @@ class _PaginaAgendaState extends State<PaginaAgenda> {
   Widget build(BuildContext context) {
     final d = context.dati;
     final vista = _vista ?? _predefinita(context);
-    final cs = Theme.of(context).colorScheme;
     final tablet = eTablet(context);
     final viste = tablet ? const [Vista.giorno, Vista.settimana, Vista.mese, Vista.elenco] : const [Vista.giorno, Vista.tre, Vista.settimana, Vista.mese, Vista.elenco];
     return Scaffold(
@@ -251,13 +250,6 @@ class _PaginaAgendaState extends State<PaginaAgenda> {
                 ),
               ),
             ),
-            if (vista != Vista.mese && vista != Vista.elenco)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(S.l, 6, S.l, 6),
-                color: cs.surfaceContainerLow,
-                child: Text('Tocca uno spazio libero per un nuovo appuntamento · tieni premuto per spostarlo', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
-              ),
           ]);
         },
       ),

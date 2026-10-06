@@ -35,8 +35,10 @@ Future<void> caricaDatiDemo(Dati d, {bool configura = false}) async {
       await d.salvaMolti('servizi', nuovi);
       servizi = serviziAttivi(d);
     }
+    final lunghi = servizi.where((s) => (comeInt(s['durata']) ?? 0) >= 30).toList();
+    final scelta = lunghi.isEmpty ? servizi : lunghi;
     Doc sv(int i) {
-      final s = servizi[i % servizi.length];
+      final s = scelta[i % scelta.length];
       return {'servizioId': s['id'], 'nome': s['nome'], 'durata': s['durata'], 'prezzoCent': s['prezzoCent'], 'quantita': 1, 'colore': s['colore'], 'richiamoGiorni': s['richiamoGiorni']};
     }
 

@@ -103,7 +103,7 @@ class SchedaCliente extends StatelessWidget {
             children: [
               Tessera(valore: '${st.visite}', etichetta: 'visite'),
               Tessera(valore: F.euro(st.spesaCent).replaceAll(',00', ''), etichetta: 'spesa totale'),
-              Tessera(valore: st.frequenzaGiorni == null ? '—' : '${st.frequenzaGiorni} gg', etichetta: 'ogni'),
+              Tessera(valore: st.frequenzaGiorni == null ? '—' : '${st.frequenzaGiorni} gg', etichetta: 'frequenza'),
               Tessera(valore: '${st.noShow}', etichetta: 'non venuta'),
             ],
           ),

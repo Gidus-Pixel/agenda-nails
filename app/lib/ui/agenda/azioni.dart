@@ -184,7 +184,7 @@ class RigaAppuntamento extends StatelessWidget {
               Row(children: [
                 if (mostraCliente) Flexible(child: Text(nome, style: t.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis)),
                 if (!mostraCliente) Flexible(child: Text(serviziTesto(app), style: t.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                if (haAvvertenze(cli)) const Padding(padding: EdgeInsets.only(left: 6), child: Icon(Icons.warning_rounded, size: 18, color: Color(0xFFB42318))),
+                if (mostraCliente && haAvvertenze(cli)) const Padding(padding: EdgeInsets.only(left: 6), child: Icon(Icons.warning_rounded, size: 18, color: Color(0xFFB42318))),
                 if ((comeInt(app['accontoCent']) ?? 0) > 0) Padding(padding: const EdgeInsets.only(left: 6), child: Icon(Icons.savings_outlined, size: 18, color: cs.primary)),
               ]),
               if (mostraCliente) Text(serviziTesto(app), maxLines: 2, overflow: TextOverflow.ellipsis, style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),

@@ -19,6 +19,7 @@ Future<void> main() async {
     await dati.avvia();
     await seminaServizi(dati);
     final cloud = Cloud(dati);
+    await preparaAmbiente();
     schermataAvvio = variabileAmbiente('AGENDA_SCHERMATA');
     if (variabileAmbiente('AGENDA_DEMO') == '1') await caricaDatiDemo(dati, configura: true);
     await cloud.avvia();
