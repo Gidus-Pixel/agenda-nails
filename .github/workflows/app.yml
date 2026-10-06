@@ -72,6 +72,12 @@ jobs:
       - uses: actions/upload-artifact@v4
         with: { name: agenda-android, path: app/build/agenda-android.apk, retention-days: 30 }
 
+      - name: APK scaricabile dalla pagina Releases (anteprima)
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh release view android-anteprima >/dev/null 2>&1 || gh release create android-anteprima --prerelease --title "Agenda per Android (anteprima)" --notes "APK di prova, aggiornato automaticamente a ogni modifica dell'app. Sul telefono: scarica agenda-android.apk e aprilo (consenti l'installazione da questa fonte)."
+          gh release upload android-anteprima build/agenda-android.apk --clobber
+
       - name: Pubblica anteprima web nel ramo "anteprima"
         run: |
           cd build/web
