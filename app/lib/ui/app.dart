@@ -167,6 +167,8 @@ class _GuscioState extends State<Guscio> with WidgetsBindingObserver {
         'impostazioni' || 'impostazioni-orari' || 'dati' => 'altro',
         _ => 'oggi',
       };
+      // sul telefono alcune sezioni non sono nella barra: si aprono sopra
+      WidgetsBinding.instance.addPostFrameCallback((_) => _cambio());
     }
   }
 

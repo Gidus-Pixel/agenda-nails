@@ -99,7 +99,7 @@ jobs:
     name: iOS (compilazione e schermate sul simulatore)
     needs: verifica
     runs-on: macos-latest
-    timeout-minutes: 60
+    timeout-minutes: 80
     defaults: { run: { working-directory: app, shell: bash } }
     steps:
       - uses: actions/checkout@v4
@@ -115,7 +115,7 @@ jobs:
         run: set -o pipefail; flutter build ios --simulator --debug 2>&1 | tee "$LOG/11-simulatore.txt"
 
       - name: Schermate su iPhone e iPad
-        timeout-minutes: 25
+        timeout-minutes: 40
         run: |
           set -e
           # ogni comando del simulatore ha un tempo massimo (a volte resta appeso)
@@ -132,7 +132,7 @@ jobs:
             sleep 5
             limite 30 xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 --wifiBars 3 || true
             limite 120 xcrun simctl install "$UDID" "$APPDIR"
-            for SCHERMATA in ${SCHERMATE:-oggi agenda agenda-settimana appuntamento clienti cliente impostazioni dati}; do
+            for SCHERMATA in ${SCHERMATE:-oggi agenda agenda-settimana appuntamento clienti cliente magazzino prodotto ordini appunti report impostazioni}; do
               limite 30 xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
               # la schermata da aprire: file nei Documenti dell'app (+ variabili d'ambiente)
               DATI=$(limite 30 xcrun simctl get_app_container "$UDID" "$BUNDLE" data 2>/dev/null || true)
