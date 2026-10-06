@@ -12,7 +12,9 @@ on:
 permissions:
   contents: write
 
-concurrency: { group: app-${{ github.ref }}, cancel-in-progress: true }
+concurrency:
+  group: app-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verifica:
