@@ -56,9 +56,9 @@ void main() {
     await t.pumpAndSettle();
 
     await scheda(t, 'Magazzino');
-    expect(find.text('Gel costruttore rosa (prova)'), findsOneWidget);
-    await t.ensureVisible(find.text('Gel costruttore rosa (prova)'));
+    await t.enterText(find.byType(TextField).first, 'gel costruttore');
     await t.pumpAndSettle();
+    expect(find.text('Gel costruttore rosa (prova)'), findsOneWidget);
     await t.tap(find.text('Gel costruttore rosa (prova)'));
     await t.pumpAndSettle();
     expect(find.textContaining('Movimenti'), findsOneWidget);

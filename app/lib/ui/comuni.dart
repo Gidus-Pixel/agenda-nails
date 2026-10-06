@@ -184,7 +184,7 @@ class Etichetta extends StatelessWidget {
       decoration: BoxDecoration(color: sfondo ?? c.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(99)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         if (icona != null) ...[Icon(icona, size: 13, color: c), const SizedBox(width: 3)],
-        Text(testo, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: c)),
+        Flexible(child: Text(testo, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: c))),
       ]),
     );
   }
