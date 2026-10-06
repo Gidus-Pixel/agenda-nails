@@ -1,0 +1,108 @@
+# App nativa (Flutter) per iOS e Android.
+# Ad ogni modifica in app/: analisi del codice, test, APK Android installabile, compilazione iOS,
+# anteprima web e foto delle schermate sul simulatore iPhone/iPad.
+name: App iOS e Android
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['app/**', '.github/workflows/app.yml']
+
+permissions:
+  contents: write
+
+concurrency: { group: app-${{ github.ref }}, cancel-in-progress: true }
+
+jobs:
+  verifica:
+    name: Analisi, test, Android, anteprima web
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: app } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+      - name: Versioni
+        run: flutter --version
+
+      - name: Genera le cartelle iOS/Android se mancano
+        run: |
+          if [ ! -d android ] || [ ! -d ios ]; then
+            flutter create --org it.agendanails --project-name agenda_nails --platforms android,ios,web --description "Agenda per nail artist ed estetiste" .
+          fi
+          python3 tools/prepara_piattaforme.py
+
+      - name: Dipendenze
+        run: flutter pub get
+
+      - name: Salva nel repository i file generati
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add android ios web pubspec.lock .metadata 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -m "App: file di piattaforma generati [skip ci]"
+            git pull --rebase origin main && git push origin HEAD:main
+          fi
+
+      - name: Analisi del codice
+        run: flutter analyze --no-fatal-infos
+
+      - name: Test
+        run: flutter test --reporter expanded
+
+      - name: Anteprima web
+        run: flutter build web --release --no-web-resources-cdn --base-href /
+      - uses: actions/upload-artifact@v4
+        with: { name: anteprima-web, path: app/build/web, retention-days: 14 }
+
+      - name: APK Android
+        run: flutter build apk --release
+      - run: cp build/app/outputs/flutter-apk/app-release.apk build/agenda-android.apk
+      - uses: actions/upload-artifact@v4
+        with: { name: agenda-android, path: app/build/agenda-android.apk, retention-days: 30 }
+
+  ios:
+    name: iOS (compilazione e schermate sul simulatore)
+    needs: verifica
+    runs-on: macos-latest
+    defaults: { run: { working-directory: app } }
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+      - run: python3 tools/prepara_piattaforme.py && flutter pub get
+
+      - name: Compilazione per iPhone (senza firma)
+        run: flutter build ios --release --no-codesign
+
+      - name: Compilazione per il simulatore
+        run: flutter build ios --simulator --debug
+
+      - name: Schermate su iPhone e iPad
+        run: |
+          set -e
+          APPDIR=build/ios/iphonesimulator/Runner.app
+          BUNDLE=$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$APPDIR/Info.plist")
+          mkdir -p schermate
+          scegli() { xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; c=[x for r,l in d.items() if 'iOS' in r for x in l if x['name'].startswith('$1')]; print(c[-1]['udid'] if c else '')"; }
+          for MODELLO in "iPhone" "iPad"; do
+            UDID=$(scegli "$MODELLO")
+            [ -z "$UDID" ] && { echo "Nessun simulatore $MODELLO"; continue; }
+            xcrun simctl boot "$UDID" || true
+            xcrun simctl bootstatus "$UDID" -b
+            xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 --wifiBars 3 || true
+            xcrun simctl install "$UDID" "$APPDIR"
+            for SCHERMATA in oggi agenda agenda-settimana clienti cliente appuntamento impostazioni; do
+              xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
+              SIMCTL_CHILD_AGENDA_DEMO=1 SIMCTL_CHILD_AGENDA_SCHERMATA=$SCHERMATA xcrun simctl launch "$UDID" "$BUNDLE"
+              sleep 12
+              xcrun simctl io "$UDID" screenshot "schermate/${MODELLO}-${SCHERMATA}.png"
+            done
+            xcrun simctl shutdown "$UDID" || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: schermate-ios, path: app/schermate, retention-days: 14 }
