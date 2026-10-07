@@ -662,7 +662,7 @@ class _PaginaNotificheState extends State<PaginaNotifiche> {
                 Riquadro(
                   tipo: ok ? 'info' : 'avviso',
                   testo: ok
-                      ? 'Le notifiche sono preparate dall\'app sul dispositivo: funzionano anche senza internet e si aggiornano da sole quando cambi l\'agenda. ${_programmate == null ? '' : 'Ora ne sono in programma $_programmate.'}'
+                      ? 'Le notifiche sono preparate dall\'app sul dispositivo: funzionano anche senza internet e si aggiornano da sole quando cambi l\'agenda. ${(_programmate ?? 0) > 0 ? 'In programma adesso: $_programmate.' : ''}'
                       : 'Le notifiche sono disponibili nell\'app per iPhone, iPad e Android.',
                   azioni: [
                     if (ok)
