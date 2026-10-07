@@ -174,7 +174,7 @@ class _GuscioState extends State<Guscio> with WidgetsBindingObserver {
         'clienti' || 'cliente' => 'clienti',
         'magazzino' || 'prodotto' => 'magazzino',
         'ordini' || 'fornitori' || 'appunti' || 'report' => s,
-        'impostazioni' || 'impostazioni-orari' || 'dati' => 'altro',
+        'impostazioni' || 'impostazioni-orari' || 'dati' || 'sicurezza' || 'notifiche' => 'altro',
         _ => 'oggi',
       };
       // sul telefono alcune sezioni non sono nella barra: si aprono sopra

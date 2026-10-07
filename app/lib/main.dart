@@ -10,6 +10,7 @@ import 'dominio/cloud.dart';
 import 'dominio/configurazione.dart';
 import 'dominio/demo.dart';
 import 'dominio/ripristino.dart';
+import 'dominio/sicurezza.dart';
 import 'servizi/notifiche.dart';
 import 'ui/app.dart';
 
@@ -25,6 +26,14 @@ Future<void> main() async {
     await preparaAmbiente();
     schermataAvvio = variabileAmbiente('AGENDA_SCHERMATA');
     if (variabileAmbiente('AGENDA_DEMO') == '1') await caricaDatiDemo(dati, configura: true);
+    // schermate automatiche (solo versioni di prova): la schermata di blocco con un PIN fittizio
+    if (kDebugMode && schermataAvvio != null) {
+      if (schermataAvvio == 'blocco') {
+        await impostaPin(dati, '2580');
+      } else if (pinImpostato(dati)) {
+        await rimuoviPin(dati);
+      }
+    }
     await cloud.avvia();
     archivioCopie = creaArchivioCopie();
     // le notifiche si preparano prima di disegnare l'app: così si sa se l'ha aperta un tocco su una notifica

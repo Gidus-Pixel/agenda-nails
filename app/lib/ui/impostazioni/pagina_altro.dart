@@ -46,9 +46,9 @@ class _PaginaAltroState extends State<PaginaAltro> {
   void initState() {
     super.initState();
     final s = schermataAvvio;
-    if (s == 'impostazioni-orari' || s == 'dati') {
+    if (s == 'impostazioni-orari' || s == 'dati' || s == 'sicurezza' || s == 'notifiche') {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) apriImpostazione(context, s == 'dati' ? 'dati' : 'orari');
+        if (mounted) apriImpostazione(context, s == 'impostazioni-orari' ? 'orari' : s!);
       });
     }
   }
