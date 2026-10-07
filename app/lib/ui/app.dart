@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import '../core/config.dart';
+import '../core/date.dart';
 import '../core/util.dart';
 import '../dati/dati.dart';
 import '../dominio/cloud.dart';
+import '../dominio/ripristino.dart';
+import '../servizi/notifiche.dart';
+import 'agenda/dettaglio_appuntamento.dart';
 import 'agenda/pagina_agenda.dart';
 import 'appunti/pagina_appunti.dart';
+import 'blocco.dart';
 import 'clienti/pagina_clienti.dart';
 import 'comuni.dart';
 import 'fornitori/pagina_fornitori.dart';
@@ -49,6 +54,9 @@ class Navigazione extends ChangeNotifier {
 
 final navigazione = Navigazione();
 
+/// Navigatore principale (per aprire pagine da una notifica).
+final navigatore = GlobalKey<NavigatorState>();
+
 /// Schermata richiesta all'avvio (schermate automatiche per i test): oggi, agenda, agenda-settimana, appuntamento, clienti, cliente, impostazioni, dati.
 String? schermataAvvio;
 
@@ -79,6 +87,8 @@ class AppAgenda extends StatelessWidget {
             locale: const Locale('it', 'IT'),
             supportedLocales: const [Locale('it', 'IT')],
             localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            navigatorKey: navigatore,
+            builder: (context, figlio) => Blocco(dati: dati, child: figlio ?? const SizedBox()),
             home: Guscio(schermataIniziale: schermataIniziale),
           );
         },
@@ -170,6 +180,34 @@ class _GuscioState extends State<Guscio> with WidgetsBindingObserver {
       // sul telefono alcune sezioni non sono nella barra: si aprono sopra
       WidgetsBinding.instance.addPostFrameCallback((_) => _cambio());
     }
+    // tocco su una notifica: con l'app aperta, oppure che ha avviato l'app
+    Notifiche.istanza.suTocco = _daNotifica;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final p = Notifiche.istanza.payloadAvvio;
+      Notifiche.istanza.payloadAvvio = null;
+      if (p != null && p.isNotEmpty) _daNotifica(p);
+    });
+  }
+
+  void _daNotifica(String p) {
+    if (!mounted) return;
+    final d = context.dati;
+    // si chiudono eventuali pagine aperte sopra, poi si apre quella giusta
+    Navigator.of(context).popUntil((r) => r.isFirst);
+    if (p.startsWith('appuntamento:')) {
+      final a = d.get('appuntamenti', p.substring('appuntamento:'.length));
+      if (a != null) {
+        navigazione.vai('agenda', giorno: D.daIso(comeStr(a['inizio'])));
+        apriAppuntamento(context, a);
+      }
+    } else if (p.startsWith('appunto:')) {
+      final a = d.get('appunti', p.substring('appunto:'.length));
+      if (a != null) apriAppunto(context, appunto: a);
+    } else if (p == 'magazzino' && d.moduloAttivo('magazzino')) {
+      navigazione.vai('magazzino');
+    } else {
+      navigazione.vai('oggi');
+    }
   }
 
   @override
@@ -198,6 +236,8 @@ class _GuscioState extends State<Guscio> with WidgetsBindingObserver {
     if (stato == AppLifecycleState.resumed) {
       cloud.programma(const Duration(milliseconds: 600));
       context.dati.aggiorna();
+      Notifiche.istanza.programma(context.dati, const Duration(seconds: 1));
+      controllaCopiaGiornaliera(context.dati);
     } else if (stato == AppLifecycleState.paused) {
       cloud.sincronizza();
     }

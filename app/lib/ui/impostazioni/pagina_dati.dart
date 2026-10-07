@@ -9,6 +9,7 @@ import '../../dominio/cifratura.dart';
 import '../../dominio/cloud.dart';
 import '../../dominio/configurazione.dart';
 import '../../dominio/demo.dart';
+import '../../dominio/ripristino.dart';
 import '../app.dart';
 import '../comuni.dart';
 import '../piattaforma.dart';
@@ -205,6 +206,8 @@ class _PaginaDatiState extends State<PaginaDati> {
                       OutlinedButton.icon(onPressed: _occupato ? null : _ripristina, icon: const Icon(Icons.restore_rounded), label: const Text('Scegli il file di backup')),
                     ]),
                   ),
+                  const SizedBox(height: S.l),
+                  _SezionePuntiRipristino(conAttesa: _conAttesa, occupato: _occupato),
                   const SizedBox(height: S.l),
                   Sezione(
                     titolo: 'Dati di prova',
@@ -573,5 +576,131 @@ class _SezioneCloud extends StatelessWidget {
     final ok = await conferma(context, titolo: 'Scollegare questo dispositivo?', messaggio: 'Smette di sincronizzarsi. I dati presenti qui restano, e restano anche nel cloud per gli altri dispositivi.', ok: 'Scollega', pericolo: true);
     if (!ok || !context.mounted) return;
     await conAttesa('Scollego…', () => cloud.scollega(remoto: remoto));
+  }
+}
+
+/// Punti di ripristino automatici (una copia al giorno + prima delle operazioni in blocco).
+class _SezionePuntiRipristino extends StatefulWidget {
+  const _SezionePuntiRipristino({required this.conAttesa, required this.occupato});
+  final Future<void> Function(String, Future<void> Function()) conAttesa;
+  final bool occupato;
+  @override
+  State<_SezionePuntiRipristino> createState() => _SezionePuntiRipristinoState();
+}
+
+class _SezionePuntiRipristinoState extends State<_SezionePuntiRipristino> {
+  List<Doc>? _copie;
+  bool _tutte = false;
+
+  @override
+  void initState() {
+    super.initState();
+    copieCambiate.addListener(_carica);
+    _carica();
+  }
+
+  @override
+  void dispose() {
+    copieCambiate.removeListener(_carica);
+    super.dispose();
+  }
+
+  Future<void> _carica() async {
+    try {
+      final c = await elencoCopie();
+      if (mounted) setState(() => _copie = c);
+    } catch (_) {
+      if (mounted) setState(() => _copie = const []);
+    }
+  }
+
+  String _conteggi(Doc c) {
+    final n = comeDoc(c['conteggi']);
+    return '${n['clienti'] ?? 0} clienti · ${n['appuntamenti'] ?? 0} appuntamenti · ${n['schede'] ?? 0} schede · ${n['prodotti'] ?? 0} prodotti · ${n['appunti'] ?? 0} appunti';
+  }
+
+  Future<void> _ripristina(Doc c) async {
+    final d = context.dati;
+    final quando = F.dataOra(D.daIso(comeStr(c['creata'])));
+    final ok = await conferma(
+      context,
+      titolo: 'Tornare a questo punto di ripristino?',
+      contenuto: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+        Text('$quando — ${motiviCopia[c['motivo']] ?? c['motivo']}', style: const TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        Text(_conteggi(c)),
+        const SizedBox(height: S.m),
+        const Riquadro(tipo: 'avviso', testo: 'Le modifiche fatte dopo andranno perse. Prima di procedere l\'app salva in automatico la situazione attuale, così puoi tornare indietro. Le foto non cambiano.'),
+      ]),
+      ok: 'Ripristina',
+      pericolo: true,
+    );
+    if (!ok || !mounted) return;
+    await widget.conAttesa('Ripristino in corso…', () async {
+      final fatto = await ripristinaCopia(d, comeStr(c['id']));
+      if (!mounted) return;
+      if (!fatto) {
+        avviso(context, 'Punto di ripristino non trovato.', errore: true);
+        return;
+      }
+      final cloud = context.cloud;
+      if (cloud.attivo) {
+        final s = await sceltaTra(context, titolo: 'Cloud', messaggio: 'Vuoi che anche il cloud e gli altri dispositivi collegati tornino a questi dati?', opzioni: [('no', 'No, solo qui', false), ('si', 'Sì, anche nel cloud', true)]);
+        if (s == 'si') await cloud.sostituisciTuttoNelCloud();
+      }
+      if (mounted) avviso(context, 'Dati riportati al $quando.');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final cs = Theme.of(context).colorScheme;
+    final copie = _copie;
+    final visibili = copie == null ? const <Doc>[] : (_tutte ? copie : copie.take(4).toList());
+    return Sezione(
+      titolo: 'Punti di ripristino',
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(
+          kIsWeb
+              ? 'Nell\'anteprima web i punti di ripristino durano finché la pagina resta aperta.'
+              : 'Ogni giorno l\'app salva da sola una copia dei dati su questo dispositivo (ultime ${maxCopie['giornaliera']}), e un\'altra prima di ogni ripristino o pulizia. Serve a rimediare agli errori, per esempio una cancellazione sbagliata. Non sostituisce il backup: se il dispositivo si rompe o viene perso, anche queste copie si perdono. Le foto non sono incluse.',
+          style: t.bodyMedium,
+        ),
+        const SizedBox(height: S.s),
+        if (copie == null)
+          const Padding(padding: EdgeInsets.all(S.m), child: Center(child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5))))
+        else if (copie.isEmpty)
+          Padding(padding: const EdgeInsets.symmetric(vertical: S.s), child: Text('Ancora nessun punto di ripristino.', style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant)))
+        else
+          for (final c in visibili)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(switch (comeStr(c['motivo'])) { 'giornaliera' => Icons.event_repeat_rounded, 'prima' => Icons.shield_outlined, _ => Icons.bookmark_border_rounded }, color: cs.primary),
+              title: Text(F.dataOra(D.daIso(comeStr(c['creata'])))),
+              subtitle: Text('${motiviCopia[c['motivo']] ?? c['motivo']}\n${_conteggi(c)}'),
+              isThreeLine: true,
+              trailing: TextButton(onPressed: widget.occupato ? null : () => _ripristina(c), child: const Text('Ripristina')),
+            ),
+        if (copie != null && copie.length > 4)
+          Align(alignment: Alignment.centerLeft, child: TextButton(onPressed: () => setState(() => _tutte = !_tutte), child: Text(_tutte ? 'Mostra meno' : 'Mostra tutti (${copie.length})'))),
+        const SizedBox(height: S.s),
+        OutlinedButton.icon(
+          onPressed: widget.occupato
+              ? null
+              : () async {
+                  final d = context.dati;
+                  try {
+                    await creaCopia(d, 'manuale');
+                    if (context.mounted) avviso(context, 'Punto di ripristino creato.');
+                  } catch (e) {
+                    if (context.mounted) avviso(context, 'Non è stato possibile crearlo: $e', errore: true);
+                  }
+                },
+          icon: const Icon(Icons.add_task_rounded),
+          label: const Text('Crea un punto di ripristino adesso'),
+        ),
+      ]),
+    );
   }
 }

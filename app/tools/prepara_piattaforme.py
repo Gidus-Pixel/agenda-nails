@@ -29,6 +29,7 @@ CHIAVI_IOS = {
     "LSSupportsOpeningDocumentsInPlace": "<false/>",
     "UIFileSharingEnabled": "<true/>",
     "ITSAppUsesNonExemptEncryption": "<false/>",
+    "NSFaceIDUsageDescription": "<string>Serve per sbloccare l'agenda con Face ID invece del PIN.</string>",
 }
 
 def plist(testo):
@@ -47,6 +48,16 @@ def podfile(testo):
 
 modifica("ios/Podfile", podfile)
 
+def appdelegate(testo):
+    # notifiche locali: il delegato del centro notifiche (mostra le notifiche anche ad app aperta)
+    if "import UserNotifications" not in testo:
+        testo = testo.replace("import UIKit", "import UIKit\nimport UserNotifications", 1)
+    if "UNUserNotificationCenter.current().delegate" not in testo:
+        testo = re.sub(r"(didFinishLaunchingWithOptions[^{]*\{\n)", r"\1    UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate\n", testo, count=1)
+    return testo
+
+modifica("ios/Runner/AppDelegate.swift", appdelegate)
+
 # ---------------- Android ----------------
 def manifest(testo):
     testo = re.sub(r'android:label="[^"]*"', f'android:label="{NOME}"', testo, count=1)
@@ -63,6 +74,58 @@ def manifest(testo):
     return testo
 
 modifica("android/app/src/main/AndroidManifest.xml", manifest)
+
+PERMESSI = ["android.permission.USE_BIOMETRIC", "android.permission.POST_NOTIFICATIONS", "android.permission.RECEIVE_BOOT_COMPLETED", "android.permission.VIBRATE"]
+RICEVITORI = """        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
+"""
+
+def manifest2(testo):
+    for p in PERMESSI:
+        if p not in testo:
+            testo = testo.replace("<application", f'<uses-permission android:name="{p}" />\n    <application', 1)
+    if "ScheduledNotificationReceiver" not in testo:
+        testo = testo.replace("</application>", RICEVITORI + "    </application>", 1)
+    return testo
+
+modifica("android/app/src/main/AndroidManifest.xml", manifest2)
+
+def gradle(testo):
+    # desugaring (notifiche programmate) e AppCompat (sblocco con impronta: tema compatibile)
+    if "isCoreLibraryDesugaringEnabled" not in testo:
+        testo = testo.replace("compileOptions {", "compileOptions {\n        isCoreLibraryDesugaringEnabled = true", 1)
+    if "desugar_jdk_libs" not in testo:
+        testo = testo.rstrip() + """
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    implementation("androidx.appcompat:appcompat:1.7.1")
+}
+"""
+    return testo
+
+modifica("android/app/build.gradle.kts", gradle)
+
+def attivita(testo):
+    # local_auth richiede FlutterFragmentActivity
+    testo = testo.replace("import io.flutter.embedding.android.FlutterActivity", "import io.flutter.embedding.android.FlutterFragmentActivity")
+    return testo.replace(": FlutterActivity()", ": FlutterFragmentActivity()")
+
+for kt in (APP / "android/app/src/main").rglob("MainActivity.kt"):
+    modifica(str(kt.relative_to(APP)), attivita)
+
+def stili(testo):
+    return testo.replace('parent="@android:style/Theme.Light.NoTitleBar"', 'parent="Theme.AppCompat.Light.NoActionBar"').replace('parent="@android:style/Theme.Black.NoTitleBar"', 'parent="Theme.AppCompat.NoActionBar"')
+
+modifica("android/app/src/main/res/values/styles.xml", stili)
+modifica("android/app/src/main/res/values-night/styles.xml", stili)
 
 print("piattaforme pronte")
 sys.exit(0)

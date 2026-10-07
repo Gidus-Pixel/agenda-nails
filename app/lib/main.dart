@@ -4,10 +4,13 @@ import 'package:intl/intl.dart';
 
 import 'core/ambiente.dart';
 import 'dati/archivio.dart';
+import 'dati/copie.dart';
 import 'dati/dati.dart';
 import 'dominio/cloud.dart';
 import 'dominio/configurazione.dart';
 import 'dominio/demo.dart';
+import 'dominio/ripristino.dart';
+import 'servizi/notifiche.dart';
 import 'ui/app.dart';
 
 Future<void> main() async {
@@ -23,7 +26,12 @@ Future<void> main() async {
     schermataAvvio = variabileAmbiente('AGENDA_SCHERMATA');
     if (variabileAmbiente('AGENDA_DEMO') == '1') await caricaDatiDemo(dati, configura: true);
     await cloud.avvia();
+    archivioCopie = creaArchivioCopie();
+    // le notifiche si preparano prima di disegnare l'app: così si sa se l'ha aperta un tocco su una notifica
+    await Notifiche.istanza.avvia(dati).timeout(const Duration(seconds: 4), onTimeout: () {});
+    dati.addListener(() => Notifiche.istanza.programma(dati));
     runApp(AppAgenda(dati: dati, cloud: cloud, schermataIniziale: schermataAvvio));
+    avviaCopieAutomatiche(dati);
   } catch (e, st) {
     debugPrint('Errore di avvio: $e\n$st');
     runApp(ErroreAvvio(errore: '$e'));

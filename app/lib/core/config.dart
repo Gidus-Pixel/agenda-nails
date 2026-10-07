@@ -29,7 +29,8 @@ final Doc configPredefinita = {
   },
   'messaggiOrdine': 'Buongiorno, vorrei ordinare quanto segue per {attivita}:',
   'avvisi': {'scadenzaGiorni': 30, 'backupGiorni': 7},
-  'sicurezza': {'bloccoDopoMinuti': 0},
+  'sicurezza': {'bloccoDopoMinuti': 0, 'bloccoAppMinuti': 1},
+  'notifiche': {'riepilogoSerale': true, 'oraRiepilogo': '19:30', 'promemoriaAppunti': true, 'oraPromemoria': '09:00', 'primaAppuntamento': 0, 'magazzino': true},
   'backupAutomatico': false,
   'cloud': {'url': ''},
   'installazione': '',
@@ -56,7 +57,7 @@ const paletteServizi = [0xFFC97B84, 0xFF8E6C8A, 0xFF5B8E7D, 0xFFD19A66, 0xFF6C8E
 /// Archivi del database: gli stessi nomi della web app (IndexedDB).
 const archivi = ['impostazioni', 'meta', 'servizi', 'clienti', 'appuntamenti', 'blocchi', 'schede_lavoro', 'foto', 'prodotti', 'movimenti_magazzino', 'fornitori', 'ordini_fornitore', 'appunti'];
 /// Dati legati a QUESTO dispositivo: non vanno nei backup né nel cloud.
-const metaLocali = ['cloud', 'cartellaBackup', 'ultimoBackupAuto', 'persistenzaRichiesta', 'ultimoBackup', 'pin'];
+const metaLocali = ['cloud', 'cartellaBackup', 'ultimoBackupAuto', 'persistenzaRichiesta', 'ultimoBackup', 'pin', 'notificheChieste'];
 
 String esadecimale(int c) => '#${(c & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 int? coloreDaHex(dynamic hex) {

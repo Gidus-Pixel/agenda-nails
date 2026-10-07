@@ -2,7 +2,9 @@
 
 App nativa (Flutter) con le stesse funzioni della versione web: agenda con trascinamento,
 clienti e storico lavori con foto, magazzino (giacenze, scadenze, PAO), fornitori e ordini con
-carico automatico, appunti con promemoria, report con CSV, impostazioni, backup e cloud cifrato.
+carico automatico, appunti con promemoria, report con CSV, impostazioni, backup e cloud cifrato,
+blocco con PIN e Face ID/impronta, notifiche sul dispositivo (riepilogo serale, promemoria,
+magazzino) e punti di ripristino automatici.
 I dati sono **compatibili con la versione web**: un backup fatto da una parte si ripristina dall'altra,
 e lo stesso cloud cifrato tiene allineati browser, iPhone, iPad e Android.
 
@@ -26,10 +28,9 @@ I log dei passaggi finiscono nei rami `ci-log-verifica` e `ci-log-ios`.
   (anteprima)" → `agenda-android.apk` e aprilo (bisogna consentire l'installazione da quella
   fonte). Il file si aggiorna da solo a ogni modifica dell'app.
 - **iPhone / iPad**: Apple consente di installare app fuori dall'App Store solo tramite
-  **TestFlight**, che richiede l'iscrizione all'Apple Developer Program (99 €/anno) a nome di chi
-  pubblica l'app. Una volta attivo l'account si aggiungono a GitHub i segreti per la firma e il
-  flusso carica ogni versione su TestFlight; le estetiste installano l'app TestFlight e ricevono
-  l'invito per email.
+  **TestFlight**, che richiede l'Apple Developer Program (99 €/anno). Il flusso di GitHub è già
+  pronto: basta aggiungere i segreti dell'account e premere "Run workflow". Passo per passo in
+  [`PUBBLICAZIONE.md`](PUBBLICAZIONE.md) (anche Android su Google Play e cloud su Cloudflare).
 
 ## Personalizzare per un'altra estetista
 

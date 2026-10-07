@@ -4,6 +4,7 @@ import '../core/util.dart';
 import '../dati/dati.dart';
 import 'agenda.dart';
 import 'magazzino.dart';
+import 'ripristino.dart';
 
 bool ciSonoDatiDemo(Dati d) => ['clienti', 'appuntamenti', 'servizi', 'schede_lavoro', 'blocchi', 'prodotti', 'fornitori', 'ordini_fornitore', 'appunti'].any((c) => d.elenco(c, archiviati: true).any((r) => r['demo'] == true));
 
@@ -186,6 +187,7 @@ Future<void> caricaDatiDemo(Dati d, {bool configura = false}) async {
 }
 
 Future<void> rimuoviDatiDemo(Dati d) async {
+  await copiaPrima(d);
   Set<dynamic> demo(String c) => d.elenco(c, archiviati: true).where((x) => x['demo'] == true).map((x) => x['id']).toSet();
   final cliDemo = demo('clienti'), prodDemo = demo('prodotti'), fornDemo = demo('fornitori');
   bool via(Doc r) {

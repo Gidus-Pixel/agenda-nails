@@ -6,6 +6,7 @@ import '../dominio/agenda.dart';
 import '../dominio/appunti.dart';
 import '../dominio/demo.dart';
 import '../dominio/magazzino.dart';
+import '../servizi/notifiche.dart';
 import 'agenda/azioni.dart';
 import 'agenda/dettaglio_appuntamento.dart';
 import 'agenda/modulo_appuntamento.dart';
@@ -166,6 +167,32 @@ class PaginaOggi extends StatelessWidget {
             const SizedBox(height: S.l),
           ],
           _StatoBackup(),
+          if (Notifiche.istanza.supportate && d.meta('notificheChieste') != true && d.moduloAttivo('agenda')) ...[
+            const SizedBox(height: S.l),
+            Riquadro(
+              titolo: 'Vuoi un avviso la sera prima?',
+              testo: 'L\'app può ricordarti gli appuntamenti del giorno dopo, i promemoria degli appunti e i prodotti da riordinare. Funziona anche senza internet.',
+              azioni: [
+                FilledButton(
+                  onPressed: () async {
+                    final si = await Notifiche.istanza.chiediPermesso();
+                    await d.scriviMeta('notificheChieste', true);
+                    d.aggiorna();
+                    if (si) await Notifiche.istanza.riprogramma(d);
+                    avvisa(si ? 'Notifiche attive. Le regoli da Altro → Notifiche.' : 'Va bene. Puoi attivarle quando vuoi da Altro → Notifiche.');
+                  },
+                  child: const Text('Attiva le notifiche'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    await d.scriviMeta('notificheChieste', true);
+                    d.aggiorna();
+                  },
+                  child: const Text('No, grazie'),
+                ),
+              ],
+            ),
+          ],
         ]);
 
         return Scaffold(

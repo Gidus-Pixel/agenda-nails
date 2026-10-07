@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/config.dart';
 import '../../core/date.dart';
 import '../../core/telefono.dart';
 import '../../core/util.dart';
 import '../../dominio/agenda.dart';
+import '../../dominio/sicurezza.dart';
+import '../../servizi/biometria.dart';
+import '../../servizi/notifiche.dart';
 import '../app.dart';
+import '../blocco.dart';
 import '../comuni.dart';
 import '../tema.dart';
 import 'pagina_altro.dart';
@@ -454,4 +459,269 @@ class _PaginaOpzioniMagazzinoState extends State<PaginaOpzioniMagazzino> {
         Campo(etichetta: 'Inizio del messaggio d\'ordine', controller: _msg, righe: 3, aiuto: 'Segnaposto: {attivita} {fornitore} {referente}'),
         Campo(etichetta: 'Categorie dei prodotti (separate da virgola)', controller: _cat, righe: 4, maiuscole: TextCapitalization.none),
       ]);
+}
+
+/* ============================ Blocco con PIN e Face ID ============================ */
+class PaginaSicurezza extends StatefulWidget {
+  const PaginaSicurezza({super.key});
+  @override
+  State<PaginaSicurezza> createState() => _PaginaSicurezzaState();
+}
+
+class _PaginaSicurezzaState extends State<PaginaSicurezza> {
+  String? _bio;
+
+  @override
+  void initState() {
+    super.initState();
+    Biometria.disponibile().then((n) {
+      if (mounted) setState(() => _bio = n);
+    });
+  }
+
+  /// Chiede uno o più PIN in una finestra. Restituisce i valori o null.
+  Future<List<String>?> _chiedi(String titolo, List<String> etichette, {String? nota}) {
+    final ctr = [for (final _ in etichette) TextEditingController()];
+    return showDialog<List<String>>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(titolo),
+        scrollable: true,
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          if (nota != null) Padding(padding: const EdgeInsets.only(bottom: S.m), child: Text(nota)),
+          for (var i = 0; i < etichette.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: S.s),
+              child: TextField(
+                controller: ctr[i],
+                autofocus: i == 0,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 8,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: InputDecoration(labelText: etichette[i], counterText: ''),
+              ),
+            ),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c), child: const Text('Annulla')),
+          FilledButton(onPressed: () => Navigator.pop(c, [for (final x in ctr) x.text]), child: const Text('OK')),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _imposta({required bool cambio}) async {
+    final d = context.dati;
+    final v = await _chiedi(cambio ? 'Cambia PIN' : 'Imposta un PIN', [if (cambio) 'PIN attuale', cambio ? 'Nuovo PIN (4–8 cifre)' : 'PIN (4–8 cifre)', 'Ripeti il PIN'],
+        nota: cambio ? null : 'Lo chiederà l\'app all\'apertura e quando ci torni dopo un po\'. Annotalo in un posto sicuro.');
+    if (v == null || !mounted) return;
+    final i = cambio ? 1 : 0;
+    if (cambio && !await verificaPin(d, v[0])) {
+      if (mounted) avviso(context, 'PIN attuale errato.', errore: true);
+      return;
+    }
+    if (!pinValido(v[i])) {
+      if (mounted) avviso(context, 'Il PIN deve avere da 4 a 8 cifre.', errore: true);
+      return;
+    }
+    if (v[i] != v[i + 1]) {
+      if (mounted) avviso(context, 'I due PIN non coincidono.', errore: true);
+      return;
+    }
+    await impostaPin(d, v[i]);
+    if (mounted) avviso(context, cambio ? 'PIN cambiato' : 'PIN impostato: l\'agenda si bloccherà quando esci.');
+  }
+
+  Future<void> _rimuovi() async {
+    final d = context.dati;
+    final v = await _chiedi('Rimuovi il PIN', ['PIN attuale']);
+    if (v == null || !mounted) return;
+    if (!await verificaPin(d, v[0])) {
+      if (mounted) avviso(context, 'PIN errato.', errore: true);
+      return;
+    }
+    await rimuoviPin(d);
+    if (mounted) avviso(context, 'PIN rimosso');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final d = context.dati;
+    return ListenableBuilder(
+      listenable: d,
+      builder: (context, _) {
+        final t = Theme.of(context).textTheme;
+        final attivo = pinImpostato(d);
+        final minuti = minutiBlocco(d);
+        return Scaffold(
+          appBar: AppBar(title: const Text('Blocco con PIN')),
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 760),
+              child: ListView(padding: const EdgeInsets.all(S.l), children: [
+                const Riquadro(
+                  titolo: 'Cosa fa',
+                  testo: 'Blocca l\'agenda all\'apertura e quando ci torni dopo un po\', così chi prende in mano il telefono o il tablet non vede clienti e incassi. Nel multitasking l\'anteprima resta coperta. Il PIN vale solo su questo dispositivo.',
+                ),
+                const SizedBox(height: S.l),
+                if (!attivo)
+                  FilledButton.icon(onPressed: () => _imposta(cambio: false), icon: const Icon(Icons.lock_outline_rounded), label: const Text('Imposta un PIN'), style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)))
+                else ...[
+                  Card(
+                    child: Column(children: [
+                      if (_bio != null)
+                        SwitchListTile(
+                          secondary: Icon(_bio == 'Face ID' ? Icons.face_retouching_natural_rounded : Icons.fingerprint_rounded),
+                          title: Text('Sblocca con $_bio'),
+                          subtitle: const Text('Il PIN resta come alternativa'),
+                          value: biometriaAttiva(d),
+                          onChanged: (v) async {
+                            if (v && !await Biometria.verifica('Attiva lo sblocco con $_bio')) return;
+                            await impostaBiometria(d, v);
+                          },
+                        )
+                      else
+                        const ListTile(leading: Icon(Icons.fingerprint_rounded), title: Text('Face ID / impronta'), subtitle: Text('Non disponibile o non configurato su questo dispositivo')),
+                      const Divider(indent: 16),
+                      ListTile(leading: const Icon(Icons.password_rounded), title: const Text('Cambia PIN'), trailing: const Icon(Icons.chevron_right_rounded), onTap: () => _imposta(cambio: true)),
+                      const Divider(indent: 16),
+                      ListTile(leading: const Icon(Icons.lock_rounded), title: const Text('Blocca adesso'), onTap: () => bloccoAttivo.value = true),
+                    ]),
+                  ),
+                  const SizedBox(height: S.l),
+                  Text('Chiedi il PIN quando torno nell\'app dopo', style: t.titleMedium),
+                  const SizedBox(height: S.s),
+                  Wrap(spacing: 6, runSpacing: 6, children: [
+                    for (final (m, txt) in const [(0, 'Subito'), (1, '1 minuto'), (5, '5 minuti'), (15, '15 minuti'), (60, '1 ora')])
+                      ChoiceChip(label: Text(txt), selected: minuti == m, onSelected: (_) => modificaConfig(context, (c) => c['sicurezza'] = {...comeDoc(c['sicurezza']), 'bloccoAppMinuti': m})),
+                  ]),
+                  const SizedBox(height: S.xl),
+                  OutlinedButton.icon(onPressed: _rimuovi, icon: Icon(Icons.lock_open_rounded, color: Theme.of(context).colorScheme.error), label: Text('Rimuovi il PIN', style: TextStyle(color: Theme.of(context).colorScheme.error))),
+                ],
+                const SizedBox(height: S.l),
+                Text('Il PIN non cifra i dati sul dispositivo: per proteggere le copie fuori dal dispositivo usa il backup con password o il cloud cifrato. Se dimentichi il PIN, reinstalla l\'app e ripristina un backup (o ricollegati al cloud).', style: t.bodySmall),
+              ]),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/* ============================ Notifiche ============================ */
+class PaginaNotifiche extends StatefulWidget {
+  const PaginaNotifiche({super.key});
+  @override
+  State<PaginaNotifiche> createState() => _PaginaNotificheState();
+}
+
+class _PaginaNotificheState extends State<PaginaNotifiche> {
+  int? _programmate;
+
+  @override
+  void initState() {
+    super.initState();
+    _conta();
+  }
+
+  Future<void> _conta() async {
+    final n = await Notifiche.istanza.quanteProgrammate();
+    if (mounted) setState(() => _programmate = n);
+  }
+
+  Future<void> _imposta(String k, dynamic v) async {
+    final d = context.dati;
+    await modificaConfig(context, (c) => c['notifiche'] = {...comeDoc(c['notifiche']), k: v});
+    await Notifiche.istanza.riprogramma(d);
+    await _conta();
+  }
+
+  Future<void> _ora(String k, String attuale) async {
+    final m = D.minDaHHMM(attuale);
+    final o = await scegliOra(context, TimeOfDay(hour: m ~/ 60, minute: m % 60));
+    if (o != null) await _imposta(k, '${D.p2(o.hour)}:${D.p2(o.minute)}');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final d = context.dati;
+    return ListenableBuilder(
+      listenable: d,
+      builder: (context, _) {
+        final t = Theme.of(context).textTheme;
+        final op = OpzioniNotifiche(d.cfg);
+        final ok = Notifiche.istanza.supportate;
+        return Scaffold(
+          appBar: AppBar(title: const Text('Notifiche')),
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 760),
+              child: ListView(padding: const EdgeInsets.all(S.l), children: [
+                Riquadro(
+                  tipo: ok ? 'info' : 'avviso',
+                  testo: ok
+                      ? 'Le notifiche sono preparate dall\'app sul dispositivo: funzionano anche senza internet e si aggiornano da sole quando cambi l\'agenda. ${_programmate == null ? '' : 'Ora ne sono in programma $_programmate.'}'
+                      : 'Le notifiche sono disponibili nell\'app per iPhone, iPad e Android.',
+                  azioni: [
+                    if (ok)
+                      FilledButton.tonal(
+                        onPressed: () async {
+                          final si = await Notifiche.istanza.chiediPermesso();
+                          await d.scriviMeta('notificheChieste', true);
+                          if (!context.mounted) return;
+                          if (si) {
+                            await Notifiche.istanza.prova();
+                            await Notifiche.istanza.riprogramma(d);
+                            await _conta();
+                          } else {
+                            avviso(context, 'Permesso negato: puoi attivarle da Impostazioni del telefono → Notifiche → Agenda.', errore: true);
+                          }
+                        },
+                        child: const Text('Consenti e prova'),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: S.l),
+                Card(
+                  child: Column(children: [
+                    SwitchListTile(
+                      title: const Text('Riepilogo la sera prima'),
+                      subtitle: Text('Quanti appuntamenti ci sono domani e chi è la prima · alle ${op.oraRiepilogo}'),
+                      value: op.riepilogo,
+                      onChanged: (v) => _imposta('riepilogoSerale', v),
+                    ),
+                    if (op.riepilogo) ListTile(contentPadding: const EdgeInsets.only(left: 32, right: 16), title: const Text('Orario del riepilogo'), trailing: Text(op.oraRiepilogo, style: t.titleMedium), onTap: () => _ora('oraRiepilogo', op.oraRiepilogo)),
+                    const Divider(indent: 16),
+                    SwitchListTile(
+                      title: const Text('Promemoria degli appunti'),
+                      subtitle: Text('Il giorno indicato nell\'appunto · alle ${op.oraAppunti}'),
+                      value: op.appunti,
+                      onChanged: (v) => _imposta('promemoriaAppunti', v),
+                    ),
+                    if (op.appunti) ListTile(contentPadding: const EdgeInsets.only(left: 32, right: 16), title: const Text('Orario dei promemoria'), trailing: Text(op.oraAppunti, style: t.titleMedium), onTap: () => _ora('oraPromemoria', op.oraAppunti)),
+                    const Divider(indent: 16),
+                    SwitchListTile(
+                      title: const Text('Avvisi di magazzino'),
+                      subtitle: const Text('Prodotti da riordinare, in scadenza o aperti da troppo'),
+                      value: op.magazzino,
+                      onChanged: (v) => _imposta('magazzino', v),
+                    ),
+                  ]),
+                ),
+                const SizedBox(height: S.l),
+                Text('Avviso prima di ogni appuntamento', style: t.titleMedium),
+                const SizedBox(height: S.s),
+                Wrap(spacing: 6, runSpacing: 6, children: [
+                  for (final (m, txt) in const [(0, 'No'), (10, '10 min prima'), (15, '15 min prima'), (30, '30 min prima'), (60, '1 ora prima')])
+                    ChoiceChip(label: Text(txt), selected: op.primaMinuti == m, onSelected: (_) => _imposta('primaAppuntamento', m)),
+                ]),
+              ]),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }

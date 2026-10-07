@@ -6,6 +6,11 @@ name: App iOS e Android
 
 on:
   workflow_dispatch:
+    inputs:
+      testflight:
+        description: "Carica questa versione su TestFlight (iPhone/iPad). Serve l'account Apple configurato: vedi app/PUBBLICAZIONE.md"
+        type: boolean
+        default: true
   push:
     branches: [main]
     paths: ['app/**', '.github/workflows/app.yml']
@@ -14,7 +19,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: app-${{ github.ref }}
+  group: app-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 env:
@@ -26,11 +31,24 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     defaults: { run: { working-directory: app, shell: bash } }
+    outputs:
+      apple: ${{ steps.apple.outputs.pronto }}
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with: { channel: stable, cache: true }
       - run: mkdir -p "$LOG" && flutter --version | tee "$LOG/00-versioni.txt"
+
+      - name: Account Apple configurato?
+        id: apple
+        env:
+          K: ${{ secrets.APPLE_API_KEY_ID }}
+          I: ${{ secrets.APPLE_API_ISSUER_ID }}
+          P: ${{ secrets.APPLE_API_KEY_P8 }}
+          T: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -n "$K" ] && [ -n "$I" ] && [ -n "$P" ] && [ -n "$T" ]; then echo "pronto=si" >> "$GITHUB_OUTPUT"
+          else echo "pronto=no" >> "$GITHUB_OUTPUT"; echo "::notice::TestFlight non ancora configurato (mancano i segreti APPLE_*): istruzioni in app/PUBBLICAZIONE.md"; fi
 
       - name: Genera le cartelle iOS/Android se mancano
         run: |
@@ -163,3 +181,72 @@ jobs:
           cd /tmp/log && git init -q && git checkout -q -b ci-log-ios
           git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "log ${GITHUB_SHA::7}"
           git push -qf "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" ci-log-ios
+
+  testflight:
+    name: Carica su TestFlight
+    needs: verifica
+    if: github.event_name == 'workflow_dispatch' && inputs.testflight && needs.verifica.outputs.apple == 'si'
+    runs-on: macos-latest
+    timeout-minutes: 60
+    defaults: { run: { working-directory: app, shell: bash } }
+    env:
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+      - run: mkdir -p "$LOG" && python3 tools/prepara_piattaforme.py && flutter pub get && xcodebuild -version | tee "$LOG/20-xcode.txt"
+
+      - name: Chiave App Store Connect
+        env: { P8: "${{ secrets.APPLE_API_KEY_P8 }}" }
+        run: |
+          DIR=~/.appstoreconnect/private_keys; mkdir -p "$DIR"
+          F="$DIR/AuthKey_${APPLE_API_KEY_ID}.p8"
+          # il segreto può contenere il testo del file .p8 oppure lo stesso testo in base64
+          if printf '%s' "$P8" | grep -q 'BEGIN PRIVATE KEY'; then printf '%s\n' "$P8" > "$F"; else printf '%s' "$P8" | base64 --decode > "$F"; fi
+          chmod 600 "$F"
+          grep -q 'BEGIN PRIVATE KEY' "$F" || { echo "::error::Il segreto APPLE_API_KEY_P8 non contiene una chiave .p8 valida"; exit 1; }
+
+      - name: Compilazione (numero di build crescente)
+        run: set -o pipefail; flutter build ios --release --no-codesign --build-number=$((GITHUB_RUN_NUMBER + 100)) 2>&1 | tee "$LOG/21-build.txt"
+
+      - name: Archivio
+        run: |
+          set -o pipefail
+          xcodebuild archive CODE_SIGNING_ALLOWED=NO -workspace ios/Runner.xcworkspace -scheme Runner -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath build/ios/Runner.xcarchive 2>&1 | tee "$LOG/22-archivio.txt" | tail -n 30
+
+      - name: Firma con certificato gestito da Apple e invio a App Store Connect
+        run: |
+          set -o pipefail
+          cat > build/ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+            <key>uploadSymbols</key><true/>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath build/ios/Runner.xcarchive -exportPath build/ios/export \
+            -exportOptionsPlist build/ExportOptions.plist -allowProvisioningUpdates \
+            -authenticationKeyID "$APPLE_API_KEY_ID" -authenticationKeyIssuerID "$APPLE_API_ISSUER_ID" \
+            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8 2>&1 | tee "$LOG/23-invio.txt" | tail -n 40
+          echo "::notice::Build $((GITHUB_RUN_NUMBER + 100)) inviata: dopo l'elaborazione di Apple (10-30 minuti) compare in TestFlight."
+
+      - name: Log nel ramo "ci-log-testflight"
+        if: always()
+        working-directory: ${{ github.workspace }}
+        run: |
+          rm -f ~/.appstoreconnect/private_keys/*.p8
+          mkdir -p /tmp/log && cp -r ci-log/. /tmp/log/ 2>/dev/null || true
+          echo "${{ job.status }} ${GITHUB_SHA}" > /tmp/log/ESITO-testflight.txt
+          cd /tmp/log && git init -q && git checkout -q -b ci-log-testflight
+          git add -A && git -c user.name=ci -c user.email=ci@local commit -qm "log ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" ci-log-testflight

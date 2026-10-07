@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/config.dart';
 import '../../core/util.dart';
+import '../../dominio/sicurezza.dart';
 import '../agenda/blocchi.dart';
 import '../app.dart';
 import '../comuni.dart';
@@ -26,6 +27,8 @@ Future<void> apriImpostazione(BuildContext context, String dove) {
     'archivio' => const PaginaArchivio(),
     'info' => const PaginaInfo(),
     'moduli' => const PaginaModuli(),
+    'sicurezza' => const PaginaSicurezza(),
+    'notifiche' => const PaginaNotifiche(),
     'magazzino' => const PaginaOpzioniMagazzino(),
     _ => const PaginaDati(),
   };
@@ -106,6 +109,7 @@ class _PaginaAltroState extends State<PaginaAltro> {
                 gruppo('I tuoi dati', [
                   voce(Icons.cloud_done_outlined, 'Backup e cloud', cloud.attivo ? 'Cloud attivo · ${cloud.esito.testo}' : 'Backup, ripristino, sincronizzazione tra dispositivi', 'dati',
                       coda: cloud.attivo ? Icon(cloud.esito.stato == 'errore' ? Icons.error_outline_rounded : Icons.check_circle_rounded, color: cloud.esito.stato == 'errore' ? cs.error : const Color(0xFF1F7A55)) : null),
+                  voce(Icons.lock_outline_rounded, 'Blocco con PIN', pinImpostato(d) ? (biometriaAttiva(d) ? 'Attivo, con Face ID / impronta' : 'Attivo') : 'Non attivo', 'sicurezza'),
                   voce(Icons.inventory_2_outlined, 'Elementi archiviati', 'Ripristina o elimina definitivamente', 'archivio'),
                 ]),
                 gruppo('Attività', [
@@ -119,6 +123,7 @@ class _PaginaAltroState extends State<PaginaAltro> {
                   voce(Icons.calendar_view_week_outlined, 'Agenda', 'Intervallo, tempo di pulizia, vista, colori', 'agenda'),
                   voce(Icons.groups_outlined, 'Operatrici', '${d.operatrici.length} ${d.operatrici.length == 1 ? 'operatrice' : 'operatrici'}', 'operatrici'),
                   voce(Icons.chat_outlined, 'Messaggi WhatsApp', 'Promemoria e richiamo', 'messaggi'),
+                  voce(Icons.notifications_none_rounded, 'Notifiche', 'Riepilogo serale, promemoria degli appunti, prossimo appuntamento', 'notifiche'),
                   if (d.moduloAttivo('magazzino')) voce(Icons.inventory_outlined, 'Magazzino e ordini', 'Avvisi di scadenza, riordino, testo degli ordini', 'magazzino'),
                   voce(Icons.dashboard_customize_outlined, 'Funzioni attive', 'Mostra o nascondi magazzino, fornitori, appunti, report…', 'moduli'),
                 ]),

@@ -10,6 +10,7 @@ import '../core/date.dart';
 import '../core/util.dart';
 import '../dati/dati.dart';
 import 'cifratura.dart';
+import 'ripristino.dart';
 
 /// Cloud cifrato: STESSO protocollo e STESSA cifratura della web app, così web, iPhone, iPad e
 /// Android dello stesso salone si sincronizzano tra loro. Il server vede solo dati illeggibili.
@@ -342,6 +343,7 @@ class Cloud extends ChangeNotifier {
   /// Dopo il collegamento: unisce o sostituisce i dati locali con quelli del cloud.
   Future<void> completaCollegamento({required bool unisci, void Function(int, int)? avanzamento}) async {
     if (!unisci) {
+      await copiaPrima(d);
       for (final a in archiviCloud) {
         await d.eliminaGrezzi(a, d.elenco(a, archiviati: true).map((x) => comeStr(x['id'])).toList());
       }

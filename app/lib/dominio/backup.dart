@@ -6,6 +6,7 @@ import '../core/date.dart';
 import '../core/util.dart';
 import '../dati/dati.dart';
 import 'cifratura.dart';
+import 'ripristino.dart';
 
 const magicCifrato = 'AGENDA-NAILS-CIFRATO-1\n';
 
@@ -107,6 +108,7 @@ BackupLetto leggiBackup(Uint8List chiaro) {
 
 /// Sostituisce tutti i dati del dispositivo con quelli del backup.
 Future<void> applicaBackup(Dati d, BackupLetto b) async {
+  await copiaPrima(d); // si può sempre tornare indietro (Backup e cloud → Punti di ripristino)
   final dati = <String, List<Doc>>{};
   for (final a in archivi) {
     if (a == 'foto') continue;
