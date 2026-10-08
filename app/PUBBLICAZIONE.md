@@ -6,6 +6,30 @@ sola volta nei "segreti" di GitHub, dove restano cifrati.
 
 ---
 
+## 0. Provarla subito sul proprio iPhone/iPad (gratis, senza account sviluppatore)
+
+Va bene per provarla tu, non per le clienti: con un Apple ID gratuito l'app **scade dopo 7 giorni**
+e va reinstallata (i dati restano: basta reinstallarla sopra). Al massimo 3 app installate così.
+
+1. Su un PC Windows installa **iTunes e iCloud scaricati dal sito Apple** (non quelli del Microsoft
+   Store), poi **Sideloadly** da <https://sideloadly.io>. Su Mac basta Sideloadly.
+2. Scarica `agenda-ios.ipa` dalla pagina **Releases** del repository →
+   "Agenda per iPhone e iPad (anteprima da firmare)". Si aggiorna a ogni modifica dell'app.
+3. Collega l'iPhone col cavo e sul telefono tocca **Autorizza** (Trust).
+4. In Sideloadly trascina il file `.ipa`, scrivi il tuo Apple ID e premi **Start**. Ti verranno
+   chiesti la password e il codice a due fattori, che vanno solo ad Apple per firmare l'app.
+5. Sull'iPhone:
+   - attiva **Impostazioni → Privacy e sicurezza → Modalità sviluppatore**: il telefono si
+     riavvia, poi confermi;
+   - vai in **Impostazioni → Generali → VPN e gestione dispositivi** → il tuo Apple ID →
+     **Autorizza**.
+6. Apri l'app **Agenda**. Dopo 7 giorni ripeti il punto 4: Sideloadly può anche rinnovarla da solo
+   se lasci il PC acceso con l'iPhone sulla stessa rete Wi-Fi.
+
+Con l'Apple ID gratuito funzionano anche Face ID e le notifiche.
+
+---
+
 ## 1. iPhone e iPad con TestFlight
 
 TestFlight è l'app di Apple per installare le versioni di prova. Le estetiste la scaricano

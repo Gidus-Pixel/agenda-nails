@@ -27,7 +27,9 @@ I log dei passaggi finiscono nei rami `ci-log-verifica` e `ci-log-ios`.
 - **Android**: dal telefono apri la pagina Releases del repository → "Agenda per Android
   (anteprima)" → `agenda-android.apk` e aprilo (bisogna consentire l'installazione da quella
   fonte). Il file si aggiorna da solo a ogni modifica dell'app.
-- **iPhone / iPad**: Apple consente di installare app fuori dall'App Store solo tramite
+- **iPhone / iPad, per provarla**: dalla pagina Releases scarica `agenda-ios.ipa` e installalo
+  con Sideloadly e un Apple ID gratuito (dura 7 giorni). I passaggi sono in [`PUBBLICAZIONE.md`](PUBBLICAZIONE.md), sezione 0.
+- **iPhone / iPad, per le clienti**: Apple consente di installare app fuori dall'App Store solo tramite
   **TestFlight**, che richiede l'Apple Developer Program (99 €/anno). Il flusso di GitHub è già
   pronto: basta aggiungere i segreti dell'account e premere "Run workflow". Passo per passo in
   [`PUBBLICAZIONE.md`](PUBBLICAZIONE.md) (anche Android su Google Play e cloud su Cloudflare).

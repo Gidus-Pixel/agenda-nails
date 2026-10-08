@@ -129,6 +129,17 @@ jobs:
       - name: Compilazione per iPhone (senza firma)
         run: set -o pipefail; flutter build ios --release --no-codesign 2>&1 | tee "$LOG/10-ios.txt"
 
+      - name: File .ipa da firmare (Sideloadly) nella pagina Releases
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          set -e
+          rm -rf build/ipa && mkdir -p build/ipa/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ipa/Payload/
+          (cd build/ipa && zip -qry ../agenda-ios.ipa Payload)
+          ls -lh build/agenda-ios.ipa
+          gh release view ios-anteprima >/dev/null 2>&1 || gh release create ios-anteprima --prerelease --title "Agenda per iPhone e iPad (anteprima da firmare)" --notes "File .ipa NON firmato, aggiornato a ogni modifica dell'app. Si installa sul proprio iPhone/iPad con Sideloadly e un Apple ID gratuito (scade dopo 7 giorni, poi si reinstalla). Istruzioni: app/PUBBLICAZIONE.md, sezione 0."
+          gh release upload ios-anteprima build/agenda-ios.ipa --clobber
+
       - name: Compilazione per il simulatore
         run: set -o pipefail; flutter build ios --simulator --debug 2>&1 | tee "$LOG/11-simulatore.txt"
 
