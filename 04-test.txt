@@ -1,0 +1,68 @@
+Resolving dependencies...
+Downloading packages...
+  code_assets 1.2.1 (2.1.0 available)
+  cross_file 0.3.5+5 (0.4.0 available)
+  dbus 0.7.15 (0.8.0 available)
+  hooks 2.0.2 (2.2.0 available)
+  image_picker_ios 0.8.13+9 (0.8.13+10 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.3 (1.19.0 available)
+  objective_c 9.5.0 (9.6.2 available)
+  petitparser 7.0.2 (7.1.0 available)
+  record_use 0.6.0 (1.1.1 available)
+  test_api 0.7.12 (0.7.15 available)
+  vector_math 2.4.0 (2.4.3 available)
+  xml 7.0.1 (7.1.0 available)
+Got dependencies!
+13 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+
+::group::✅ Passing tests
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/widget_test.dart: telefono: oggi, agenda, nuovo appuntamento, clienti, scheda cliente, altro
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/cifratura_test.dart: PBKDF2-SHA256 310000 → chiavi AES e HMAC come la web app
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/cifratura_test.dart: AES-GCM: stesso risultato di WebCrypto e decifratura
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/cifratura_test.dart: password sbagliata → ErroreCifratura
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/cifratura_test.dart: chiave del record (HMAC, base64url senza "=")
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/cifratura_test.dart: verificatore della password
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/cifratura_test.dart: pacchetto del record: impacchetta/spacchetta
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/widget_test.dart: iPad: barra laterale, settimana, clienti affiancate
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/magazzino_test.dart: quantità: 3 decimali, interi restano interi, formato italiano
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/magazzino_test.dart: la giacenza è la somma dei movimenti (con segno dal tipo)
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/magazzino_test.dart: scadenze e PAO (31 gennaio + 1 mese = fine febbraio)
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/magazzino_test.dart: riordino dai sotto scorta e ricevimento con carico automatico
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/magazzino_test.dart: consumi della scheda lavoro: ricalcolati a ogni salvataggio
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/magazzino_test.dart: appunti: promemoria, ordinamento, ricerca
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/magazzino_test.dart: report con i dati di prova e CSV per Excel
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/backup_test.dart: backup → ripristino su un altro dispositivo (foto incluse)
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/telefono_test.dart: normalizzazione dei numeri italiani
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/telefono_test.dart: numero per WhatsApp: solo cifre, senza + né 00
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/telefono_test.dart: link wa.me con testo codificato
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/telefono_test.dart: modello del messaggio
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/fase3_test.dart: PIN impostato, verificato, rimosso; non finisce nei backup
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/fase3_test.dart: notifiche riepilogo la sera prima, solo per appuntamenti attivi
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/fase3_test.dart: notifiche avviso prima dell'appuntamento, appunti e opzioni spente
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/fase3_test.dart: notifiche cambio dell'ora: il riepilogo resta alle 19:30 ora italiana
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/fase3_test.dart: punti di ripristino copia giornaliera una volta al giorno, ripristino e copia "prima"
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/backup_test.dart: backup cifrato: stesso formato della web app
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/fase3_test.dart: punti di ripristino si tengono solo le ultime copie per motivo; i dati locali restano
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/fase3_test.dart: widget e aggiornamenti widget: un testo per ogni giorno, annullati esclusi, righe in eccesso riassunte
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/fase3_test.dart: widget e aggiornamenti versione.json: letta solo se valida
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/agenda_test.dart: slot libero dentro l'orario: nessun problema
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/agenda_test.dart: giorno di chiusura, fuori orario, pausa
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/agenda_test.dart: sovrapposizione e tempo di pulizia
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/agenda_test.dart: blocchi singoli e ricorrenti
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/agenda_test.dart: cambio dell'ora: un appuntamento il 25/10 resta alle 10:00
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/agenda_test.dart: primo spazio libero
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/agenda_test.dart: da ricontattare dopo l'intervallo di richiamo
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/backup_test.dart: ripristino di un backup creato dalla versione web (anche cifrato)
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/backup_test.dart: file non validi
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/backup_test.dart: dati di prova: caricati e rimossi senza toccare i dati veri
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/backup_test.dart: cancellazione di una cliente con anonimizzazione
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/date_test.dart: chiavi di data locali (niente toISOString)
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/date_test.dart: ora legale → solare (25 ottobre 2026)
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/date_test.dart: ora solare → legale (28 marzo 2027)
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/date_test.dart: ISO identico a JavaScript
+✅ /home/runner/work/agenda-nails/agenda-nails/app/test/date_test.dart: importi in centesimi
+::endgroup::
+
+🎉 45 tests passed.
