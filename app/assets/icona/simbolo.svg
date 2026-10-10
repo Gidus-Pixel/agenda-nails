@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Calendario con unghia: il simbolo dell'agenda. Sfondo trasparente, colori del marchio. -->
-  <rect x="104" y="128" width="304" height="276" rx="40" fill="#FFFFFF"/>
-  <path d="M144 128h224a40 40 0 0 1 40 40v38H104v-38a40 40 0 0 1 40-40z" fill="#3A2A2C"/>
-  <rect x="174" y="98" width="38" height="74" rx="19" fill="#FFFFFF"/>
-  <rect x="300" y="98" width="38" height="74" rx="19" fill="#FFFFFF"/>
-  <path d="M256 236c-34 0-56 30-56 66s20 68 56 68 56-32 56-68-22-66-56-66z" fill="#B4646E"/>
-  <rect x="233" y="262" width="15" height="58" rx="7.5" fill="#F7EBEC"/>
+  <!-- Boccetta di smalto con brillantino: il simbolo dell'agenda. Sfondo trasparente, colori del marchio. -->
+  <rect x="214" y="86" width="84" height="132" rx="18" fill="#3A2A2C"/>
+  <rect x="196" y="204" width="120" height="30" rx="10" fill="#3A2A2C"/>
+  <path d="M176 248h160a40 40 0 0 1 40 40v86a62 62 0 0 1-62 62H198a62 62 0 0 1-62-62v-86a40 40 0 0 1 40-40z" fill="#FFFFFF"/>
+  <path d="M164 318h184v56a48 48 0 0 1-48 48H212a48 48 0 0 1-48-48z" fill="#F2C9CF"/>
+  <rect x="176" y="270" width="16" height="66" rx="8" fill="#F7EBEC"/>
+  <path d="M372 104l9 22 22 9-22 9-9 22-9-22-22-9 22-9z" fill="#FFFFFF"/>
 </svg>

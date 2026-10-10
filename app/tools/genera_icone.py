@@ -47,7 +47,7 @@ def png(svg_testo, lato, opaco=False):
 def salva(im, percorso):
     percorso.parent.mkdir(parents=True, exist_ok=True)
     im.save(percorso, optimize=True)
-    print("scritto", percorso.relative_to(APP))
+    print("scritto", percorso.relative_to(APP.parent))
 
 
 # ---------------- Android ----------------
@@ -98,10 +98,18 @@ for f in sorted(IOS.glob("Icon-App-*.png")):
 # ---------------- web (anteprima) ----------------
 WEB = APP / "web"
 if WEB.exists():
-    salva(png(svg(simbolo, SFONDO, 0.92, 96), 32), WEB / "favicon.png")
+    salva(png(svg(simbolo, SFONDO, 0.92, 256), 32), WEB / "favicon.png")
     for lato in (192, 512):
-        salva(png(svg(simbolo, SFONDO, 0.92, lato * 0), lato), WEB / f"icons/Icon-{lato}.png")
+        salva(png(svg(simbolo, SFONDO, 0.92, 256), lato), WEB / f"icons/Icon-{lato}.png")
         salva(png(svg(simbolo, SFONDO, 0.72), lato), WEB / f"icons/Icon-maskable-{lato}.png")
+# versione web principale (cartella icone/ nella radice del repository)
+RADICE = APP.parent / "icone"
+if RADICE.exists():
+    salva(png(svg(simbolo, SFONDO, 0.92), 180, opaco=True), RADICE / "apple-touch-icon.png")
+    salva(png(svg(simbolo, SFONDO, 0.92, 256), 32), RADICE / "favicon-32.png")
+    salva(png(svg(simbolo, SFONDO, 0.92, 256), 192), RADICE / "icona-192.png")
+    salva(png(svg(simbolo, SFONDO, 0.92, 256), 512), RADICE / "icona-512.png")
+    salva(png(svg(simbolo, SFONDO, 0.72), 512), RADICE / "icona-maskable-512.png")
 # logo dentro l'app (schermata di blocco, barra laterale)
 salva(png(svg(simbolo, SFONDO, 0.92, 256), 256), APP / "assets/immagini/icona.png")
 # anteprima per controllo

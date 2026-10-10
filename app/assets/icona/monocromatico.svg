@@ -1,11 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <!-- Sagoma per l'icona a tema di Android 13+: conta solo la forma (il colore lo decide il sistema). -->
-  <path fill-rule="evenodd" fill="#000" d="M144 128h224a40 40 0 0 1 40 40v196a40 40 0 0 1-40 40H144a40 40 0 0 1-40-40V168a40 40 0 0 1 40-40z
-    M104 196v12h304v-12z
-    M256 236c-34 0-56 30-56 66s20 68 56 68 56-32 56-68-22-66-56-66z
-    M193 90a29 29 0 0 1 29 29v42a29 29 0 0 1-58 0v-42a29 29 0 0 1 29-29z
-    M319 90a29 29 0 0 1 29 29v42a29 29 0 0 1-58 0v-42a29 29 0 0 1 29-29z"/>
-  <rect x="174" y="98" width="38" height="74" rx="19" fill="#000"/>
-  <rect x="300" y="98" width="38" height="74" rx="19" fill="#000"/>
-  <rect x="233" y="262" width="15" height="58" rx="7.5" fill="#000"/>
+  <rect x="214" y="86" width="84" height="132" rx="18" fill="#000"/>
+  <rect x="196" y="204" width="120" height="30" rx="10" fill="#000"/>
+  <path fill-rule="evenodd" fill="#000" d="M176 248h160a40 40 0 0 1 40 40v86a62 62 0 0 1-62 62H198a62 62 0 0 1-62-62v-86a40 40 0 0 1 40-40z
+    M184 262a8 8 0 0 1 8 8v58a8 8 0 0 1-16 0v-58a8 8 0 0 1 8-8z"/>
+  <path d="M372 104l9 22 22 9-22 9-9 22-9-22-22-9 22-9z" fill="#000"/>
 </svg>
