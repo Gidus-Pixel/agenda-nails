@@ -108,7 +108,7 @@ jobs:
       - name: APK scaricabile dalla pagina Releases (anteprima)
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
-          gh release view android-anteprima >/dev/null 2>&1 || gh release create android-anteprima --prerelease --title "Agenda per Android (anteprima)" --notes "APK di prova, aggiornato automaticamente a ogni modifica dell'app. Sul telefono: scarica agenda-android.apk e aprilo (consenti l'installazione da questa fonte)."
+          gh release view android-anteprima >/dev/null 2>&1 || gh release create android-anteprima --title "Agenda per Android (anteprima)" --notes "APK di prova, aggiornato automaticamente a ogni modifica dell'app. Sul telefono: scarica agenda-android.apk e aprilo (consenti l'installazione da questa fonte)."
           # versione.json: l'app lo legge per sapere se c'è un aggiornamento (Altro → Aggiornamenti)
           BUILD=$((GITHUB_RUN_NUMBER + 100))
           VERS=$(grep -m1 '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')
@@ -118,6 +118,8 @@ jobs:
           gh release upload android-anteprima build/agenda-android.apk --clobber
           # dopo l'APK: chi vede la versione nuova la trova già scaricabile
           gh release upload android-anteprima build/versione.json --clobber
+          # l'APK è la versione da installare: in cima alla pagina Releases e nel riquadro "Latest"
+          gh release edit android-anteprima --prerelease=false --latest
 
       - name: Pubblica anteprima web nel ramo "anteprima"
         run: |
@@ -162,6 +164,7 @@ jobs:
           ls -lh build/agenda-ios.ipa
           gh release view ios-anteprima >/dev/null 2>&1 || gh release create ios-anteprima --prerelease --title "Agenda per iPhone e iPad (anteprima da firmare)" --notes "File .ipa NON firmato, aggiornato a ogni modifica dell'app. Si installa sul proprio iPhone/iPad con Sideloadly e un Apple ID gratuito (scade dopo 7 giorni, poi si reinstalla). Istruzioni: app/PUBBLICAZIONE.md, sezione 0."
           gh release upload ios-anteprima build/agenda-ios.ipa --clobber
+          gh release edit ios-anteprima --prerelease --latest=false
 
       - name: Compilazione per il simulatore
         run: set -o pipefail; flutter build ios --simulator --debug 2>&1 | tee "$LOG/11-simulatore.txt"
