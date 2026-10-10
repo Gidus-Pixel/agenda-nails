@@ -275,7 +275,7 @@ class _GuscioState extends State<Guscio> with WidgetsBindingObserver {
                           onDestinationSelected: scegli,
                           labelType: NavigationRailLabelType.all,
                           groupAlignment: -0.9,
-                          leading: Padding(padding: const EdgeInsets.only(bottom: S.s, top: S.s), child: Icon(Icons.spa_rounded, color: cs.primary, size: 30)),
+                          leading: Padding(padding: const EdgeInsets.only(bottom: S.s, top: S.s), child: Image.asset('assets/immagini/icona.png', width: 36, height: 36)),
                           destinations: [for (final v in voci) NavigationRailDestination(icon: Icon(v.icona), selectedIcon: Icon(v.iconaScelta), label: Text(v.titolo))],
                         ),
                       ),

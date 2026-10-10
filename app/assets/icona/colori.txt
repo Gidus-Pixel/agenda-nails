@@ -1,0 +1,3 @@
+sfondo=#B4646E
+splash=#F7EBEC
+splash_scuro=#1F1719

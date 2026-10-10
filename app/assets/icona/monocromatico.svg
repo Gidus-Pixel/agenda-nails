@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Sagoma per l'icona a tema di Android 13+: conta solo la forma (il colore lo decide il sistema). -->
+  <path fill-rule="evenodd" fill="#000" d="M144 128h224a40 40 0 0 1 40 40v196a40 40 0 0 1-40 40H144a40 40 0 0 1-40-40V168a40 40 0 0 1 40-40z
+    M104 196v12h304v-12z
+    M256 236c-34 0-56 30-56 66s20 68 56 68 56-32 56-68-22-66-56-66z
+    M193 90a29 29 0 0 1 29 29v42a29 29 0 0 1-58 0v-42a29 29 0 0 1 29-29z
+    M319 90a29 29 0 0 1 29 29v42a29 29 0 0 1-58 0v-42a29 29 0 0 1 29-29z"/>
+  <rect x="174" y="98" width="38" height="74" rx="19" fill="#000"/>
+  <rect x="300" y="98" width="38" height="74" rx="19" fill="#000"/>
+  <rect x="233" y="262" width="15" height="58" rx="7.5" fill="#000"/>
+</svg>

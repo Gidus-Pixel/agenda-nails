@@ -82,10 +82,25 @@ jobs:
       - name: Anteprima web
         run: set -o pipefail; flutter build web --release --no-web-resources-cdn --base-href / 2>&1 | tee "$LOG/05-web.txt"
 
+      - name: Firma stabile dell'APK
+        # la chiave (cifrata) è in android/firma-android.p12; la password è nel segreto ANDROID_KEYSTORE_PASSWORD
+        env: { PW: "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" }
+        run: |
+          if [ -n "$PW" ] && [ -f android/firma-android.p12 ]; then
+            printf 'storeFile=../firma-android.p12\nstorePassword=%s\nkeyAlias=agenda\nkeyPassword=%s\n' "$PW" "$PW" > android/key.properties
+            echo "Firma stabile attiva"
+          else
+            echo "::warning::Manca il segreto ANDROID_KEYSTORE_PASSWORD: l'APK è firmato con una chiave di prova e per aggiornarlo bisogna disinstallare l'app (istruzioni in app/PUBBLICAZIONE.md)."
+          fi
+
       - name: APK Android
         run: |
           set -o pipefail
-          flutter build apk --release 2>&1 | tee "$LOG/06-apk.txt"
+          # numero di versione crescente: Android riconosce l'APK come aggiornamento
+          flutter build apk --release --build-number=$((GITHUB_RUN_NUMBER + 100)) 2>&1 | tee "$LOG/06-apk.txt"
+          rm -f android/key.properties
+          SIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | tail -n1)
+          "$SIGNER" verify --print-certs build/app/outputs/flutter-apk/app-release.apk 2>&1 | grep -E "DN|SHA-256" | tee "$LOG/06b-firma.txt" || true
           cp build/app/outputs/flutter-apk/app-release.apk build/agenda-android.apk
       - uses: actions/upload-artifact@v4
         with: { name: agenda-android, path: app/build/agenda-android.apk, retention-days: 30 }

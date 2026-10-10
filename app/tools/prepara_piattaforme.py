@@ -127,5 +127,83 @@ def stili(testo):
 modifica("android/app/src/main/res/values/styles.xml", stili)
 modifica("android/app/src/main/res/values-night/styles.xml", stili)
 
+# ---------------- Android: icona, avvio, firma ----------------
+def manifest_icona(testo):
+    if "android:roundIcon" not in testo:
+        testo = testo.replace('android:icon="@mipmap/ic_launcher"', 'android:icon="@mipmap/ic_launcher"\n        android:roundIcon="@mipmap/ic_launcher_round"', 1)
+    return testo
+
+modifica("android/app/src/main/AndroidManifest.xml", manifest_icona)
+
+AVVIO = """<?xml version="1.0" encoding="utf-8"?>
+<!-- Schermata di avvio (Android 11 e precedenti): sfondo del marchio e logo al centro -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/avvio_sfondo" />
+    <item>
+        <bitmap android:gravity="center" android:src="@drawable/avvio_logo" />
+    </item>
+</layer-list>
+"""
+for cartella in ("drawable", "drawable-v21"):
+    f = APP / f"android/app/src/main/res/{cartella}/launch_background.xml"
+    if f.exists() and f.read_text(encoding="utf-8") != AVVIO:
+        f.write_text(AVVIO, encoding="utf-8")
+        print(f"aggiornato {cartella}/launch_background.xml")
+
+# Android 12+: la schermata di avvio di sistema usa l'icona adattiva su questo sfondo
+for cartella, padre in (("values-v31", "Theme.AppCompat.Light.NoActionBar"), ("values-night-v31", "Theme.AppCompat.NoActionBar")):
+    f = APP / f"android/app/src/main/res/{cartella}/styles.xml"
+    f.parent.mkdir(parents=True, exist_ok=True)
+    testo = f"""<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="LaunchTheme" parent="{padre}">
+        <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:windowSplashScreenBackground">@color/avvio_sfondo</item>
+    </style>
+</resources>
+"""
+    if not f.exists() or f.read_text(encoding="utf-8") != testo:
+        f.write_text(testo, encoding="utf-8")
+        print(f"aggiornato {cartella}/styles.xml")
+
+FIRMA_IMPORT = """import java.io.FileInputStream
+import java.util.Properties
+
+"""
+FIRMA_TESTA = """
+// Firma stabile: android/key.properties (creato dalla pipeline con la password nei segreti di GitHub).
+// Senza, si firma con la chiave di debug (gli aggiornamenti richiederebbero di disinstallare l'app).
+val proprietaFirma = Properties()
+val fileFirma = rootProject.file("key.properties")
+if (fileFirma.exists()) {
+    proprietaFirma.load(FileInputStream(fileFirma))
+}
+
+"""
+FIRMA_CONFIG = """    signingConfigs {
+        create("release") {
+            if (fileFirma.exists()) {
+                keyAlias = proprietaFirma["keyAlias"] as String
+                keyPassword = proprietaFirma["keyPassword"] as String
+                storeFile = file(proprietaFirma["storeFile"] as String)
+                storePassword = proprietaFirma["storePassword"] as String
+            }
+        }
+    }
+
+    buildTypes {"""
+
+def gradle_firma(testo):
+    if "proprietaFirma" not in testo:
+        testo = FIRMA_IMPORT + testo
+        # in Kotlin DSL nulla può precedere il blocco plugins {}: le proprietà vanno subito dopo
+        testo = testo.replace("\nandroid {", FIRMA_TESTA + "android {", 1)
+        testo = testo.replace("    buildTypes {", FIRMA_CONFIG, 1)
+        testo = re.sub(r'signingConfig = signingConfigs\.getByName\("debug"\)',
+                       'signingConfig = if (fileFirma.exists()) signingConfigs.getByName("release") else signingConfigs.getByName("debug")', testo, count=1)
+    return testo
+
+modifica("android/app/build.gradle.kts", gradle_firma)
+
 print("piattaforme pronte")
 sys.exit(0)

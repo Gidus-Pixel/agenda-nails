@@ -118,6 +118,17 @@ sull'esportazione a ogni versione.
 - **Subito, senza account**: ogni modifica dell'app aggiorna il file `agenda-android.apk` nella
   pagina **Releases** del repository ("Agenda per Android (anteprima)"). Si apre dal telefono e si
   installa, consentendo l'installazione da quella fonte.
+- **Firma stabile (una volta)**: ogni APK è firmato con la stessa chiave, salvata cifrata in
+  `android/firma-android.p12`. Così ogni nuova versione si installa **sopra** quella vecchia e i
+  dati restano. Serve un solo segreto su GitHub: **Settings → Secrets and variables → Actions →
+  New repository secret** con nome `ANDROID_KEYSTORE_PASSWORD` e come valore la password della
+  chiave. Conserva la password anche in un posto sicuro, per esempio un gestore di password: senza,
+  non si possono più pubblicare aggiornamenti della stessa app, né su Google Play.
+  > Le versioni di prova fatte **prima** della firma stabile non si aggiornano: fai un backup,
+  > disinstallale, installa la nuova versione e ripristina il backup. Va fatto una sola volta.
+- **Logo**: il disegno è in `assets/icona/` (`simbolo.svg` e i colori in `colori.txt`). Da lì
+  `python3 tools/genera_icone.py` rigenera tutte le icone per Android, compresa l'icona a tema di
+  Android 13+, per iOS e per il web, e la schermata di avvio.
 - **Google Play**, in futuro: serve un account Google Play Console (25 $ una tantum). I nuovi
   account personali devono fare un test chiuso con almeno 12 tester per 14 giorni prima della
   pubblicazione.

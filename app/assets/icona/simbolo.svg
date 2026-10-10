@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Calendario con unghia: il simbolo dell'agenda. Sfondo trasparente, colori del marchio. -->
+  <rect x="104" y="128" width="304" height="276" rx="40" fill="#FFFFFF"/>
+  <path d="M144 128h224a40 40 0 0 1 40 40v38H104v-38a40 40 0 0 1 40-40z" fill="#3A2A2C"/>
+  <rect x="174" y="98" width="38" height="74" rx="19" fill="#FFFFFF"/>
+  <rect x="300" y="98" width="38" height="74" rx="19" fill="#FFFFFF"/>
+  <path d="M256 236c-34 0-56 30-56 66s20 68 56 68 56-32 56-68-22-66-56-66z" fill="#B4646E"/>
+  <rect x="233" y="262" width="15" height="58" rx="7.5" fill="#F7EBEC"/>
+</svg>

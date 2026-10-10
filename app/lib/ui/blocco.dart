@@ -86,7 +86,7 @@ class _Copertura extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return ColoredBox(color: cs.surface, child: Center(child: Icon(Icons.spa_rounded, size: 56, color: cs.primary)));
+    return ColoredBox(color: cs.surface, child: Center(child: Image.asset('assets/immagini/icona.png', width: 72, height: 72)));
   }
 }
 
@@ -216,7 +216,7 @@ class _SchermataBloccoState extends State<SchermataBlocco> with SingleTickerProv
         child: Center(
           child: SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.spa_rounded, size: 44, color: cs.primary),
+              Image.asset('assets/immagini/icona.png', width: 64, height: 64, semanticLabel: 'Logo'),
               const SizedBox(height: S.s),
               Text(nome.isEmpty ? 'Agenda' : nome, style: t.headlineSmall),
               const SizedBox(height: S.l),
