@@ -4,7 +4,8 @@ App nativa (Flutter) con le stesse funzioni della versione web: agenda con trasc
 clienti e storico lavori con foto, magazzino (giacenze, scadenze, PAO), fornitori e ordini con
 carico automatico, appunti con promemoria, report con CSV, impostazioni, backup e cloud cifrato,
 blocco con PIN e Face ID/impronta, notifiche sul dispositivo (riepilogo serale, promemoria,
-magazzino) e punti di ripristino automatici.
+magazzino) e punti di ripristino automatici. Su Android ci sono anche il widget "Agenda di oggi",
+le scorciatoie tenendo premuta l'icona, l'avviso degli aggiornamenti e il backup di Google.
 I dati sono **compatibili con la versione web**: un backup fatto da una parte si ripristina dall'altra,
 e lo stesso cloud cifrato tiene allineati browser, iPhone, iPad e Android.
 

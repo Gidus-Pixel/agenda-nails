@@ -6,6 +6,9 @@ import '../dominio/agenda.dart';
 import '../dominio/appunti.dart';
 import '../dominio/demo.dart';
 import '../dominio/magazzino.dart';
+import '../dominio/backup.dart';
+import '../servizi/aggiornamenti.dart';
+import '../servizi/backup_android.dart';
 import '../servizi/notifiche.dart';
 import 'agenda/azioni.dart';
 import 'agenda/dettaglio_appuntamento.dart';
@@ -16,6 +19,7 @@ import 'clienti/pagina_clienti.dart';
 import 'clienti/scheda_cliente.dart';
 import 'comuni.dart';
 import 'fornitori/ordini.dart';
+import 'impostazioni/aggiornamenti.dart';
 import 'impostazioni/pagina_altro.dart';
 import 'magazzino/scheda_prodotto.dart';
 import 'piattaforma.dart';
@@ -29,7 +33,7 @@ class PaginaOggi extends StatelessWidget {
   Widget build(BuildContext context) {
     final d = context.dati;
     return ListenableBuilder(
-      listenable: Listenable.merge([d, context.cloud]),
+      listenable: Listenable.merge([d, context.cloud, Aggiornamenti.istanza, backupAndroidTrovato]),
       builder: (context, _) {
         final cs = Theme.of(context).colorScheme;
         final t = Theme.of(context).textTheme;
@@ -56,6 +60,14 @@ class PaginaOggi extends StatelessWidget {
         final largo = eLargo(context);
 
         final colonnaAgenda = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          if (backupAndroidTrovato.value != null) ...[
+            const _BackupAndroidTrovato(),
+            const SizedBox(height: S.l),
+          ],
+          if (Aggiornamenti.istanza.daProporre(d)) ...[
+            const RiquadroAggiornamento(),
+            const SizedBox(height: S.l),
+          ],
           if (prossimo != null) ...[
             _Prossimo(app: prossimo),
             const SizedBox(height: S.l),
@@ -408,4 +420,38 @@ Future<void> apriCodaPromemoria(BuildContext context, List<Doc> apps) {
       },
     ),
   );
+}
+
+/// Dopo una reinstallazione: Android ha riportato la copia dei dati dal backup di Google.
+class _BackupAndroidTrovato extends StatelessWidget {
+  const _BackupAndroidTrovato();
+  @override
+  Widget build(BuildContext context) {
+    final d = context.dati;
+    final b = backupAndroidTrovato.value;
+    if (b == null) return const SizedBox.shrink();
+    return Riquadro(
+      tipo: 'ok',
+      titolo: 'Ho ritrovato i tuoi dati',
+      testo: 'Android ha recuperato dal backup di Google una copia${b.creato == null ? '' : ' del ${F.dataOra(b.creato)}'}: '
+          '${b.conta('clienti')} clienti, ${b.conta('appuntamenti')} appuntamenti, ${b.conta('prodotti')} prodotti. Le foto non sono incluse.',
+      azioni: [
+        FilledButton(
+          onPressed: () async {
+            await applicaBackup(d, b);
+            backupAndroidTrovato.value = null;
+            avvisa('Dati recuperati.');
+          },
+          child: const Text('Recupera i dati'),
+        ),
+        TextButton(
+          onPressed: () async {
+            await d.scriviMeta('backupAndroidIgnorato', true);
+            backupAndroidTrovato.value = null;
+          },
+          child: const Text('No, parto da zero'),
+        ),
+      ],
+    );
+  }
 }

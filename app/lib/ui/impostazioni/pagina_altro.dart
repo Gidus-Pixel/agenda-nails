@@ -7,6 +7,8 @@ import '../agenda/blocchi.dart';
 import '../app.dart';
 import '../comuni.dart';
 import '../tema.dart';
+import '../../servizi/aggiornamenti.dart';
+import 'aggiornamenti.dart';
 import 'archivio.dart';
 import 'configurazione.dart';
 import 'orari.dart';
@@ -30,6 +32,7 @@ Future<void> apriImpostazione(BuildContext context, String dove) {
     'sicurezza' => const PaginaSicurezza(),
     'notifiche' => const PaginaNotifiche(),
     'magazzino' => const PaginaOpzioniMagazzino(),
+    'aggiornamenti' => const PaginaAggiornamenti(),
     _ => const PaginaDati(),
   };
   return Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => pagina));
@@ -57,7 +60,7 @@ class _PaginaAltroState extends State<PaginaAltro> {
   Widget build(BuildContext context) {
     final d = context.dati;
     return ListenableBuilder(
-      listenable: Listenable.merge([d, context.cloud]),
+      listenable: Listenable.merge([d, context.cloud, Aggiornamenti.istanza]),
       builder: (context, _) {
         final cs = Theme.of(context).colorScheme;
         final cloud = context.cloud;
@@ -128,6 +131,9 @@ class _PaginaAltroState extends State<PaginaAltro> {
                   voce(Icons.dashboard_customize_outlined, 'Funzioni attive', 'Mostra o nascondi magazzino, fornitori, appunti, report…', 'moduli'),
                 ]),
                 gruppo('Informazioni', [
+                  if (Aggiornamenti.istanza.supportati)
+                    voce(Icons.system_update_outlined, 'Aggiornamenti', Aggiornamenti.istanza.disponibile != null ? 'Nuova versione disponibile' : 'Versione $versioneApp', 'aggiornamenti',
+                        coda: Aggiornamenti.istanza.disponibile != null ? Icon(Icons.fiber_new_rounded, color: cs.primary) : null),
                   voce(Icons.info_outline_rounded, 'Informazioni e privacy', 'Versione $versioneApp · note fiscali', 'info'),
                 ]),
               ]),

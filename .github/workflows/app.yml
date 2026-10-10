@@ -109,7 +109,15 @@ jobs:
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           gh release view android-anteprima >/dev/null 2>&1 || gh release create android-anteprima --prerelease --title "Agenda per Android (anteprima)" --notes "APK di prova, aggiornato automaticamente a ogni modifica dell'app. Sul telefono: scarica agenda-android.apk e aprilo (consenti l'installazione da questa fonte)."
+          # versione.json: l'app lo legge per sapere se c'è un aggiornamento (Altro → Aggiornamenti)
+          BUILD=$((GITHUB_RUN_NUMBER + 100))
+          VERS=$(grep -m1 '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')
+          NOTE=$(git log -1 --format=%s "$GITHUB_SHA" | sed 's/^App: //' | cut -c1-200)
+          python3 -c "import json,sys; json.dump({'build': int(sys.argv[1]), 'versione': sys.argv[2], 'data': sys.argv[3], 'note': sys.argv[4], 'apk': 'https://github.com/' + sys.argv[5] + '/releases/download/android-anteprima/agenda-android.apk'}, open('build/versione.json', 'w'), ensure_ascii=False)" "$BUILD" "$VERS" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$NOTE" "$GITHUB_REPOSITORY"
+          cat build/versione.json
           gh release upload android-anteprima build/agenda-android.apk --clobber
+          # dopo l'APK: chi vede la versione nuova la trova già scaricabile
+          gh release upload android-anteprima build/versione.json --clobber
 
       - name: Pubblica anteprima web nel ramo "anteprima"
         run: |

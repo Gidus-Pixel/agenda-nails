@@ -135,6 +135,26 @@ def manifest_icona(testo):
 
 modifica("android/app/src/main/AndroidManifest.xml", manifest_icona)
 
+WIDGET = """        <receiver android:name=".WidgetOggi" android:exported="true" android:label="Agenda di oggi">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_oggi_info" />
+        </receiver>
+"""
+
+def manifest_extra(testo):
+    # widget "Agenda di oggi" nella schermata Home
+    if "WidgetOggi" not in testo:
+        testo = testo.replace("</application>", WIDGET + "    </application>", 1)
+    # backup di Google: solo la copia compatta dei dati (vedi res/xml/regole_*.xml)
+    if "android:dataExtractionRules" not in testo:
+        testo = testo.replace('android:roundIcon="@mipmap/ic_launcher_round"',
+                              'android:roundIcon="@mipmap/ic_launcher_round"\n        android:allowBackup="true"\n        android:fullBackupContent="@xml/regole_backup"\n        android:dataExtractionRules="@xml/regole_estrazione"', 1)
+    return testo
+
+modifica("android/app/src/main/AndroidManifest.xml", manifest_extra)
+
 AVVIO = """<?xml version="1.0" encoding="utf-8"?>
 <!-- Schermata di avvio (Android 11 e precedenti): sfondo del marchio e logo al centro -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">

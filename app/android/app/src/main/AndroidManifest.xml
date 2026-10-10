@@ -8,7 +8,10 @@
         android:label="Agenda"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round">
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:allowBackup="true"
+        android:fullBackupContent="@xml/regole_backup"
+        android:dataExtractionRules="@xml/regole_estrazione">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -44,6 +47,12 @@
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
                 <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
             </intent-filter>
+        </receiver>
+            <receiver android:name=".WidgetOggi" android:exported="true" android:label="Agenda di oggi">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_oggi_info" />
         </receiver>
     </application>
     <!-- Required to query activities that can process text, see:

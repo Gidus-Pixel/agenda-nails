@@ -7,7 +7,13 @@ import '../core/util.dart';
 import '../dati/dati.dart';
 import '../dominio/cloud.dart';
 import '../dominio/ripristino.dart';
+import '../servizi/aggiornamenti.dart';
+import '../servizi/backup_android.dart';
 import '../servizi/notifiche.dart';
+import '../servizi/scorciatoie.dart';
+import '../servizi/widget_home.dart';
+import 'agenda/modulo_appuntamento.dart';
+import 'clienti/modulo_cliente.dart';
 import 'agenda/dettaglio_appuntamento.dart';
 import 'agenda/pagina_agenda.dart';
 import 'appunti/pagina_appunti.dart';
@@ -186,7 +192,25 @@ class _GuscioState extends State<Guscio> with WidgetsBindingObserver {
       final p = Notifiche.istanza.payloadAvvio;
       Notifiche.istanza.payloadAvvio = null;
       if (p != null && p.isNotEmpty) _daNotifica(p);
+      // scorciatoie tenendo premuta l'icona dell'app
+      if (mounted) Scorciatoie.avvia(context.dati, (tipo) => WidgetsBinding.instance.addPostFrameCallback((_) => _daScorciatoia(tipo)));
     });
+  }
+
+  void _daScorciatoia(String tipo) {
+    if (!mounted) return;
+    Navigator.of(context).popUntil((r) => r.isFirst);
+    switch (tipo) {
+      case 'nuovo-appuntamento':
+        navigazione.vai('agenda');
+        apriModuloAppuntamento(context);
+      case 'agenda':
+        navigazione.vai('agenda', giorno: DateTime.now());
+      case 'nuova-cliente':
+        apriModuloCliente(context);
+      case 'nuovo-appunto':
+        apriAppunto(context);
+    }
   }
 
   void _daNotifica(String p) {
@@ -237,9 +261,12 @@ class _GuscioState extends State<Guscio> with WidgetsBindingObserver {
       cloud.programma(const Duration(milliseconds: 600));
       context.dati.aggiorna();
       Notifiche.istanza.programma(context.dati, const Duration(seconds: 1));
+      WidgetHome.programma(context.dati, const Duration(seconds: 1));
+      Aggiornamenti.istanza.seServe(context.dati);
       controllaCopiaGiornaliera(context.dati);
     } else if (stato == AppLifecycleState.paused) {
       cloud.sincronizza();
+      BackupAndroid.salva(context.dati);
     }
   }
 

@@ -12,7 +12,10 @@ import 'dominio/configurazione.dart';
 import 'dominio/demo.dart';
 import 'dominio/ripristino.dart';
 import 'dominio/sicurezza.dart';
+import 'servizi/aggiornamenti.dart';
+import 'servizi/backup_android.dart';
 import 'servizi/notifiche.dart';
+import 'servizi/widget_home.dart';
 import 'ui/app.dart';
 
 Future<void> main() async {
@@ -39,9 +42,16 @@ Future<void> main() async {
     archivioCopie = creaArchivioCopie();
     // le notifiche si preparano prima di disegnare l'app: così si sa se l'ha aperta un tocco su una notifica
     await Notifiche.istanza.avvia(dati).timeout(const Duration(seconds: 4), onTimeout: () {});
-    dati.addListener(() => Notifiche.istanza.programma(dati));
+    dati.addListener(() {
+      Notifiche.istanza.programma(dati);
+      WidgetHome.programma(dati);
+    });
+    backupAndroidTrovato.value = await BackupAndroid.trovato(dati);
     runApp(AppAgenda(dati: dati, cloud: cloud, schermataIniziale: schermataAvvio));
     avviaCopieAutomatiche(dati);
+    WidgetHome.programma(dati, const Duration(seconds: 3));
+    Aggiornamenti.istanza.avvia(dati);
+    Future.delayed(const Duration(seconds: 20), () => BackupAndroid.salva(dati));
   } catch (e, st) {
     debugPrint('Errore di avvio: $e\n$st');
     runApp(ErroreAvvio(errore: '$e'));

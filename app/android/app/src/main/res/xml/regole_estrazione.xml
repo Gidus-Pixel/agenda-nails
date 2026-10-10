@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+: nel cloud solo la copia compatta; nel trasferimento diretto a un nuovo telefono
+     (cavo o Wi-Fi) non c'è limite di spazio e passa tutto, foto comprese. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="file" path="backup-google/" />
+    </cloud-backup>
+</data-extraction-rules>

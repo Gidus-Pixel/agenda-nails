@@ -126,6 +126,15 @@ sull'esportazione a ogni versione.
   non si possono più pubblicare aggiornamenti della stessa app, né su Google Play.
   > Le versioni di prova fatte **prima** della firma stabile non si aggiornano: fai un backup,
   > disinstallale, installa la nuova versione e ripristina il backup. Va fatto una sola volta.
+- **Aggiornamenti**: insieme all'APK la pipeline pubblica `versione.json`. L'app lo controlla
+  all'avvio e quando ci torni, al massimo ogni 6 ore, e se c'è una versione nuova lo dice nella
+  schermata Oggi e in **Altro → Aggiornamenti**. Il download si apre nel browser e l'installazione
+  la conferma l'utente. Per un'installazione diversa, per esempio un'altra estetista con il suo
+  repository, l'indirizzo si cambia in `aggiornamenti.url` della configurazione.
+- **Backup di Google**: Android salva da solo sul Google Drive dell'utente una copia compatta dei
+  dati, senza foto, aggiornata a ogni uscita dall'app. Se l'app viene reinstallata e Android la
+  ripristina, la schermata Oggi propone "Recupera i dati". Nel passaggio diretto a un telefono
+  nuovo, via cavo o Wi-Fi, passa tutto, foto comprese.
 - **Logo**: il disegno è in `assets/icona/` (`simbolo.svg` e i colori in `colori.txt`). Da lì
   `python3 tools/genera_icone.py` rigenera tutte le icone per Android, compresa l'icona a tema di
   Android 13+, per iOS e per il web, e la schermata di avvio.

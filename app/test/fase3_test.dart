@@ -6,7 +6,9 @@ import 'package:agenda_nails/dati/copie.dart';
 import 'package:agenda_nails/dominio/backup.dart';
 import 'package:agenda_nails/dominio/ripristino.dart';
 import 'package:agenda_nails/dominio/sicurezza.dart';
+import 'package:agenda_nails/servizi/aggiornamenti.dart';
 import 'package:agenda_nails/servizi/notifiche.dart';
+import 'package:agenda_nails/servizi/widget_home.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -148,6 +150,35 @@ void main() {
       expect((dati!['meta'] as List).any((m) => m['id'] == 'pin'), isFalse);
       await ripristinaCopia(d, comeStr(c.first['id']));
       expect(pinImpostato(d), isTrue);
+    });
+  });
+
+  group('widget e aggiornamenti', () {
+    test('widget: un testo per ogni giorno, annullati esclusi, righe in eccesso riassunte', () async {
+      final d = await datiDiProva();
+      for (var h = 9; h < 16; h++) {
+        await d.salva('appuntamenti', app(mar, '${D.p2(h)}:00', '${D.p2(h)}:45', nome: 'C$h'));
+      }
+      await d.salva('appuntamenti', app(mar, '16:00', '17:00', stato: 'annullato', nome: 'Via'));
+      final w = datiWidget(d, ora: D.combina(D.aggiungiGiorniKey(mar, -1), '18:00'));
+      expect(w.length, 7);
+      expect(w.keys.first, D.aggiungiGiorniKey(mar, -1));
+      expect(w[D.aggiungiGiorniKey(mar, -1)]!['sottotitolo'], 'Nessun appuntamento');
+      final g = w[mar]!;
+      expect(g['sottotitolo'], '7 appuntamenti');
+      final righe = (g['righe'] as List).cast<String>();
+      expect(righe.length, 5);
+      expect(righe.first, startsWith('09:00  C9'));
+      expect(righe.last, 'e altri 3…');
+      expect(righe.any((r) => r.contains('Via')), isFalse);
+    });
+
+    test('versione.json: letta solo se valida', () {
+      final v = VersioneDisponibile.da({'build': 142, 'versione': '1.1.0', 'apk': 'https://github.com/x/y/releases/download/a/agenda-android.apk', 'data': '2026-10-10T15:00:00Z'});
+      expect(v!.build, 142);
+      expect(v.data, isNotNull);
+      expect(VersioneDisponibile.da({'build': 'x', 'apk': 'https://a'}), isNull);
+      expect(VersioneDisponibile.da({'build': 3, 'apk': 'http://non-sicuro'}), isNull);
     });
   });
 }

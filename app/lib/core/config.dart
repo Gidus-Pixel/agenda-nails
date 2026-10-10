@@ -4,7 +4,7 @@ import 'util.dart';
 /// così configurazioni, backup e cloud sono compatibili tra web, iOS e Android.
 const String appId = 'agenda-nails';
 const int schemaVersion = 1;
-const String versioneApp = '1.0.0';
+const String versioneApp = '1.1.0';
 
 final Doc configPredefinita = {
   'attivita': {'nome': '', 'titolare': '', 'citta': '', 'telefono': '', 'logo': null, 'prefissoInternazionale': '39'},
@@ -33,6 +33,8 @@ final Doc configPredefinita = {
   'notifiche': {'riepilogoSerale': true, 'oraRiepilogo': '19:30', 'promemoriaAppunti': true, 'oraPromemoria': '09:00', 'primaAppuntamento': 0, 'magazzino': true},
   'backupAutomatico': false,
   'cloud': {'url': ''},
+  // Android fuori dal Play Store: da dove l'app controlla se c'è una versione nuova
+  'aggiornamenti': {'url': 'https://github.com/Gidus-Pixel/agenda-nails/releases/download/android-anteprima/versione.json'},
   'installazione': '',
   'note': '',
 };
@@ -57,7 +59,7 @@ const paletteServizi = [0xFFC97B84, 0xFF8E6C8A, 0xFF5B8E7D, 0xFFD19A66, 0xFF6C8E
 /// Archivi del database: gli stessi nomi della web app (IndexedDB).
 const archivi = ['impostazioni', 'meta', 'servizi', 'clienti', 'appuntamenti', 'blocchi', 'schede_lavoro', 'foto', 'prodotti', 'movimenti_magazzino', 'fornitori', 'ordini_fornitore', 'appunti'];
 /// Dati legati a QUESTO dispositivo: non vanno nei backup né nel cloud.
-const metaLocali = ['cloud', 'cartellaBackup', 'ultimoBackupAuto', 'persistenzaRichiesta', 'ultimoBackup', 'pin', 'notificheChieste'];
+const metaLocali = ['cloud', 'cartellaBackup', 'ultimoBackupAuto', 'persistenzaRichiesta', 'ultimoBackup', 'pin', 'notificheChieste', 'aggiornamentoIgnorato', 'backupAndroidIgnorato'];
 
 String esadecimale(int c) => '#${(c & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 int? coloreDaHex(dynamic hex) {

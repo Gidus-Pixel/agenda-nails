@@ -103,6 +103,6 @@ if WEB.exists():
         salva(png(svg(simbolo, SFONDO, 0.92, lato * 0), lato), WEB / f"icons/Icon-{lato}.png")
         salva(png(svg(simbolo, SFONDO, 0.72), lato), WEB / f"icons/Icon-maskable-{lato}.png")
 # logo dentro l'app (schermata di blocco, barra laterale)
-salva(png(svg(simbolo, SFONDO, 0.92, 112), 256), APP / "assets/immagini/icona.png")
+salva(png(svg(simbolo, SFONDO, 0.92, 256), 256), APP / "assets/immagini/icona.png")
 # anteprima per controllo
 salva(png(svg(simbolo, SFONDO, 0.92, 112), 512), ICONA / "anteprima.png")
